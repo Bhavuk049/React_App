@@ -1,3 +1,6 @@
+# Prisma generated client
+/generated
+
 # Logs
 logs
 *.log
@@ -141,3 +144,5 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+/generated/prisma
