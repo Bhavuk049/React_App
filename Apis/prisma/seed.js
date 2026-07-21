@@ -8,17 +8,18 @@ async function main() {
     where: { email: "admin@uniqpick.com" },
     update: {},
     create: {
-      name: "Admin",
+      firstName: "Admin",
       email: "admin@uniqpick.com",
       passwordHash: adminPasswordHash,
       role: "ADMIN",
+      emailVerifiedAt: new Date(),
     },
   });
 
   const categories = [
-    { name: "Apparel", slug: "apparel", description: "Clothing and wearables" },
-    { name: "Accessories", slug: "accessories", description: "Bags, belts, and more" },
-    { name: "Home & Living", slug: "home-living", description: "Decor and everyday essentials" },
+    { name: "Apparel", slug: "apparel", description: "Clothing and wearables", isActive: true },
+    { name: "Accessories", slug: "accessories", description: "Bags, belts, and more", isActive: true },
+    { name: "Home & Living", slug: "home-living", description: "Decor and everyday essentials", isActive: true },
   ];
 
   for (const c of categories) {
@@ -39,6 +40,7 @@ async function main() {
       stock: 120,
       images: ["https://placehold.co/600x600?text=Classic+Tee"],
       isFeatured: true,
+      isActive: true,
       categoryId: apparel.id,
     },
     {
@@ -48,6 +50,7 @@ async function main() {
       price: 1999,
       stock: 40,
       images: ["https://placehold.co/600x600?text=Denim+Jacket"],
+      isActive: true,
       categoryId: apparel.id,
     },
     {
@@ -58,6 +61,7 @@ async function main() {
       stock: 75,
       images: ["https://placehold.co/600x600?text=Leather+Wallet"],
       isFeatured: true,
+      isActive: true,
       categoryId: accessories.id,
     },
     {
@@ -67,6 +71,7 @@ async function main() {
       price: 699,
       stock: 60,
       images: ["https://placehold.co/600x600?text=Tote+Bag"],
+      isActive: true,
       categoryId: accessories.id,
     },
     {
@@ -77,6 +82,7 @@ async function main() {
       stock: 100,
       images: ["https://placehold.co/600x600?text=Mug+Set"],
       isFeatured: true,
+      isActive: true,
       categoryId: home.id,
     },
     {
@@ -86,6 +92,7 @@ async function main() {
       price: 1299,
       stock: 30,
       images: ["https://placehold.co/600x600?text=Throw+Blanket"],
+      isActive: true,
       categoryId: home.id,
     },
   ];

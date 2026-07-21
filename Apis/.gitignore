@@ -1,6 +1,9 @@
 # Prisma generated client
 /generated
 
+# Uploaded product images (local disk storage)
+/uploads
+
 # Logs
 logs
 *.log

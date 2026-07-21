@@ -1,10 +1,17 @@
-import { Link } from "react-router-dom";
-import { useCart } from "../context/CartContext.jsx";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../hooks/useCart.js";
+import { useAuth } from "../hooks/useAuth.js";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 export function CartPage() {
   const { items, updateQuantity, removeItem, totalPrice } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  function handleCheckout() {
+    navigate(user ? "/checkout" : "/login");
+  }
 
   if (items.length === 0) {
     return (
@@ -68,7 +75,10 @@ export function CartPage() {
         <span className="text-lg font-semibold text-neutral-900">{currency.format(totalPrice)}</span>
       </div>
 
-      <button className="mt-6 w-full rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-800">
+      <button
+        onClick={handleCheckout}
+        className="mt-6 w-full rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-800"
+      >
         Checkout
       </button>
     </div>

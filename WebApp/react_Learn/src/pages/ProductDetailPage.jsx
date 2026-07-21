@@ -1,27 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getProduct } from "../api/products.js";
-import { useCart } from "../context/CartContext.jsx";
+import { useGetProductQuery } from "../store/api/productsApi.js";
+import { useCart } from "../hooks/useCart.js";
+import { resolveImageUrl } from "../utils/images.js";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 export function ProductDetailPage() {
   const { slug } = useParams();
   const { addItem } = useCart();
-  const [product, setProduct] = useState(null);
+  const { data: product, isError } = useGetProductQuery(slug);
   const [quantity, setQuantity] = useState(1);
-  const [notFound, setNotFound] = useState(false);
   const [added, setAdded] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
 
   useEffect(() => {
-    setProduct(null);
-    setNotFound(false);
-    getProduct(slug)
-      .then(setProduct)
-      .catch(() => setNotFound(true));
+    setActiveImage(0);
   }, [slug]);
 
-  if (notFound) {
+  if (isError) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 lg:px-8">
         <p className="text-neutral-500">Product not found.</p>
@@ -47,8 +44,30 @@ export function ProductDetailPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-        <div className="aspect-square overflow-hidden rounded-lg bg-neutral-100">
-          <img src={product.images?.[0]} alt={product.name} className="h-full w-full object-cover" />
+        <div>
+          <div className="aspect-square overflow-hidden rounded-lg bg-neutral-100">
+            <img
+              src={resolveImageUrl(product.images?.[activeImage] ?? product.images?.[0])}
+              alt={product.name}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          {product.images?.length > 1 && (
+            <div className="mt-4 flex gap-3">
+              {product.images.map((image, index) => (
+                <button
+                  key={image}
+                  type="button"
+                  onClick={() => setActiveImage(index)}
+                  className={`h-16 w-16 overflow-hidden rounded-md border ${
+                    index === activeImage ? "border-neutral-900" : "border-neutral-200"
+                  }`}
+                >
+                  <img src={resolveImageUrl(image)} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -64,35 +83,40 @@ export function ProductDetailPage() {
 
           <p className="mt-6 text-neutral-600">{product.description}</p>
 
-          <p className="mt-4 text-sm text-neutral-500">
-            {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
-          </p>
+          {product.stock > 0 ? (
+            <>
+              <p className="mt-4 text-sm text-neutral-500">{product.stock} in stock</p>
 
-          <div className="mt-6 flex items-center gap-4">
-            <div className="flex items-center rounded-md border border-neutral-200">
-              <button
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="px-3 py-2 text-neutral-600 hover:text-neutral-900"
-              >
-                -
-              </button>
-              <span className="w-8 text-center text-sm">{quantity}</span>
-              <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="px-3 py-2 text-neutral-600 hover:text-neutral-900"
-              >
-                +
-              </button>
-            </div>
+              <div className="mt-6 flex items-center gap-4">
+                <div className="flex items-center rounded-md border border-neutral-200">
+                  <button
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="px-3 py-2 text-neutral-600 hover:text-neutral-900"
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center text-sm">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="px-3 py-2 text-neutral-600 hover:text-neutral-900"
+                  >
+                    +
+                  </button>
+                </div>
 
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              className="flex-1 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
-            >
-              {added ? "Added!" : "Add to cart"}
-            </button>
-          </div>
+                <button
+                  onClick={handleAddToCart}
+                  className="flex-1 rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-800"
+                >
+                  {added ? "Added!" : "Add to cart"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="mt-6 inline-block rounded-full bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-500">
+              Out of stock
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -17,6 +17,14 @@ export async function listCategories(req, res) {
   res.json({ categories });
 }
 
+export async function adminListCategories(req, res) {
+  const categories = await prisma.category.findMany({
+    orderBy: { name: "asc" },
+    include: { _count: { select: { products: true } } },
+  });
+  res.json({ categories });
+}
+
 export async function getCategory(req, res) {
   const category = await prisma.category.findUnique({ where: { slug: req.params.slug } });
   if (!category) {
@@ -41,6 +49,16 @@ export async function updateCategory(req, res) {
 }
 
 export async function deleteCategory(req, res) {
+  const productCount = await prisma.product.count({ where: { categoryId: req.params.id } });
+
+  if (productCount > 0) {
+    return res.status(409).json({
+      error: `This category has ${productCount} product${productCount === 1 ? "" : "s"}. Move or delete ${
+        productCount === 1 ? "it" : "them"
+      } before deleting the category.`,
+    });
+  }
+
   await prisma.category.delete({ where: { id: req.params.id } });
   res.status(204).send();
 }

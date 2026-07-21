@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  adminListCategories,
   createCategory,
   deleteCategory,
   getCategory,
@@ -12,6 +13,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const router = Router();
 
 router.get("/", asyncHandler(listCategories));
+router.get("/admin", requireAuth, requireAdmin, asyncHandler(adminListCategories));
 router.get("/:slug", asyncHandler(getCategory));
 router.post("/", requireAuth, requireAdmin, asyncHandler(createCategory));
 router.patch("/:id", requireAuth, requireAdmin, asyncHandler(updateCategory));

@@ -1,17 +1,10 @@
-import { useEffect, useState } from "react";
-import { adminListProducts } from "../../api/products.js";
-import { listCategories } from "../../api/categories.js";
+import { useAdminListProductsQuery } from "../../store/api/productsApi.js";
+import { useListCategoriesQuery } from "../../store/api/categoriesApi.js";
 
 export function AdminDashboard() {
-  const [stats, setStats] = useState({ products: 0, categories: 0 });
-
-  useEffect(() => {
-    Promise.all([adminListProducts({ pageSize: 1 }), listCategories()]).then(
-      ([productsData, categories]) => {
-        setStats({ products: productsData.pagination.total, categories: categories.length });
-      }
-    );
-  }, []);
+  const { data: productsData } = useAdminListProductsQuery({ pageSize: 1 });
+  const { data: categories = [] } = useListCategoriesQuery();
+  const stats = { products: productsData?.pagination.total ?? 0, categories: categories.length };
 
   return (
     <div>

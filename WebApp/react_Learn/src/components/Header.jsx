@@ -1,6 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
-import { useCart } from "../context/CartContext.jsx";
+import { useAuth } from "../hooks/useAuth.js";
+import { useCart } from "../hooks/useCart.js";
 
 const navLinkClass = ({ isActive }) =>
   `text-sm font-medium transition-colors ${
@@ -15,7 +15,7 @@ export function Header() {
     <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <Link to="/" className="text-xl font-semibold tracking-tight text-neutral-900">
-          UniqPick
+          TheUniqPick
         </Link>
 
         <nav className="hidden items-center gap-8 sm:flex">
@@ -41,10 +41,31 @@ export function Header() {
           </Link>
 
           {user ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               {user.role === "ADMIN" && (
                 <Link to="/admin" className="text-sm font-medium text-neutral-600 hover:text-neutral-900">
                   Admin
+                </Link>
+              )}
+              {user.role === "CUSTOMER" && (
+                <Link to="/orders" className="text-sm font-medium text-neutral-600 hover:text-neutral-900">
+                  Orders
+                </Link>
+              )}
+              {user.role === "CUSTOMER" && (
+                <Link
+                  to="/account"
+                  title="My account"
+                  aria-label="My account"
+                  className="inline-flex rounded-full p-1 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+                >
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 8a7 7 0 1 1 14 0 1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </Link>
               )}
               <button

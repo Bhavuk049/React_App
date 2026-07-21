@@ -1,27 +1,18 @@
-import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { listProducts } from "../api/products.js";
-import { listCategories } from "../api/categories.js";
+import { useListProductsQuery } from "../store/api/productsApi.js";
+import { useListCategoriesQuery } from "../store/api/categoriesApi.js";
 import { ProductCard } from "../components/ProductCard.jsx";
 
 export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get("category") ?? "";
 
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    listCategories().then(setCategories);
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    listProducts({ category: category || undefined, pageSize: 24 })
-      .then((data) => setProducts(data.products))
-      .finally(() => setLoading(false));
-  }, [category]);
+  const { data: categories = [] } = useListCategoriesQuery();
+  const { data: productsData, isLoading: loading } = useListProductsQuery({
+    category: category || undefined,
+    pageSize: 24,
+  });
+  const products = productsData?.products ?? [];
 
   function selectCategory(slug) {
     if (slug) {

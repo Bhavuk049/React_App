@@ -1,22 +1,12 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { listProducts } from "../api/products.js";
-import { listCategories } from "../api/categories.js";
+import { useListProductsQuery } from "../store/api/productsApi.js";
+import { useListCategoriesQuery } from "../store/api/categoriesApi.js";
 import { ProductCard } from "../components/ProductCard.jsx";
 
 export function Home() {
-  const [featured, setFeatured] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([listProducts({ featured: true, pageSize: 4 }), listCategories()])
-      .then(([productsData, categoriesData]) => {
-        setFeatured(productsData.products);
-        setCategories(categoriesData);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: productsData, isLoading: loading } = useListProductsQuery({ featured: true, pageSize: 4 });
+  const { data: categories = [] } = useListCategoriesQuery();
+  const featured = productsData?.products ?? [];
 
   return (
     <div>

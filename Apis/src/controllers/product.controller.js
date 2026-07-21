@@ -1,5 +1,15 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { uploadsRoot } from "../middleware/upload.js";
+
+const MAX_PRODUCT_IMAGES = 5;
+
+const booleanString = z
+  .enum(["true", "false"])
+  .transform((v) => v === "true")
+  .optional();
 
 const productSchema = z.object({
   name: z.string().min(2),
@@ -7,12 +17,35 @@ const productSchema = z.object({
   description: z.string().min(1),
   price: z.coerce.number().positive(),
   compareAtPrice: z.coerce.number().positive().optional(),
-  stock: z.coerce.number().int().min(0).default(0),
-  images: z.array(z.string().url()).default([]),
-  isActive: z.boolean().optional(),
-  isFeatured: z.boolean().optional(),
+  stock: z.coerce.number().int().min(0).optional(),
+  barcode: z.string().trim().max(64).optional(),
+  gstRate: z.coerce.number().min(0).max(100).optional(),
+  gstInclusive: booleanString,
+  isActive: booleanString,
+  isFeatured: booleanString,
   categoryId: z.string().uuid(),
 });
+
+// Empty barcode input should mean "no barcode" (null), not an empty string —
+// several products with barcode="" would otherwise collide on the unique index.
+function normalizeBarcode(data) {
+  if ("barcode" in data) {
+    data.barcode = data.barcode ? data.barcode : null;
+  }
+  return data;
+}
+
+function buildUploadedImageUrls(files) {
+  return (files || []).map((file) => `/uploads/products/${file.filename}`);
+}
+
+async function deleteImageFiles(imageUrls) {
+  await Promise.all(
+    imageUrls
+      .filter((url) => url.startsWith("/uploads/"))
+      .map((url) => fs.unlink(path.join(uploadsRoot, url.replace("/uploads/", ""))).catch(() => {})),
+  );
+}
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -27,7 +60,10 @@ export async function listProducts(req, res) {
 
   const where = {
     isActive: true,
-    ...(category ? { category: { slug: category } } : {}),
+    category: {
+      isActive: true,
+      ...(category ? { slug: category } : {}),
+    },
     ...(featured ? { isFeatured: true } : {}),
     ...(search
       ? { name: { contains: search, mode: "insensitive" } }
@@ -56,30 +92,111 @@ export async function getProduct(req, res) {
     where: { slug: req.params.slug },
     include: { category: true },
   });
-  if (!product || !product.isActive) {
+  if (!product || !product.isActive || !product.category.isActive) {
     return res.status(404).json({ error: "Product not found" });
   }
   res.json({ product });
 }
 
 export async function createProduct(req, res) {
-  const data = productSchema.parse(req.body);
-  const product = await prisma.product.create({ data });
+  const data = normalizeBarcode(productSchema.parse(req.body));
+  const images = buildUploadedImageUrls(req.files);
+
+  if (images.length > MAX_PRODUCT_IMAGES) {
+    return res.status(400).json({ error: `You can upload up to ${MAX_PRODUCT_IMAGES} images per product.` });
+  }
+
+  const product = await prisma.product.create({ data: { ...data, images } });
   res.status(201).json({ product });
 }
 
 export async function updateProduct(req, res) {
-  const data = productSchema.partial().parse(req.body);
+  const current = await prisma.product.findUnique({ where: { id: req.params.id } });
+  if (!current) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+
+  const bodyKeys = Object.keys(req.body);
+  const isPublishToggleOnly =
+    bodyKeys.length === 1 && bodyKeys[0] === "isActive" && (!req.files || req.files.length === 0);
+
+  if (current.isActive && !isPublishToggleOnly) {
+    return res.status(409).json({
+      error: "Unpublish this product before editing it, then publish it again once you're done.",
+    });
+  }
+
+  const data = normalizeBarcode(productSchema.partial().parse(req.body));
+  const newImages = buildUploadedImageUrls(req.files);
+
+  let existingImages = [];
+  if (req.body.existingImages) {
+    try {
+      existingImages = JSON.parse(req.body.existingImages);
+    } catch {
+      return res.status(400).json({ error: "Invalid existingImages value" });
+    }
+  }
+
+  const images = [...existingImages, ...newImages];
+  if (images.length > MAX_PRODUCT_IMAGES) {
+    return res.status(400).json({ error: `You can upload up to ${MAX_PRODUCT_IMAGES} images per product.` });
+  }
+
+  const replacingImages = req.body.existingImages !== undefined || newImages.length > 0;
+
   const product = await prisma.product.update({
     where: { id: req.params.id },
-    data,
+    data: {
+      ...data,
+      ...(replacingImages ? { images } : {}),
+    },
   });
+
+  if (replacingImages) {
+    const droppedImages = current.images.filter((url) => !images.includes(url));
+    await deleteImageFiles(droppedImages);
+  }
+
   res.json({ product });
 }
 
 export async function deleteProduct(req, res) {
-  await prisma.product.delete({ where: { id: req.params.id } });
+  const product = await prisma.product.delete({ where: { id: req.params.id } });
+  await deleteImageFiles(product.images);
   res.status(204).send();
+}
+
+export async function adminGetProduct(req, res) {
+  const product = await prisma.product.findUnique({
+    where: { id: req.params.id },
+    include: { category: true },
+  });
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+
+  // Stock is only ever reduced at checkout, so each order item IS the stock-reduction log entry.
+  const stockLog = await prisma.orderItem.findMany({
+    where: { productId: req.params.id },
+    select: {
+      id: true,
+      quantity: true,
+      order: {
+        select: {
+          id: true,
+          createdAt: true,
+          status: true,
+          channel: true,
+          guestName: true,
+          user: { select: { firstName: true, lastName: true, email: true } },
+        },
+      },
+    },
+    orderBy: { order: { createdAt: "desc" } },
+  });
+
+  res.json({ product, stockLog });
 }
 
 export async function adminListProducts(req, res) {
