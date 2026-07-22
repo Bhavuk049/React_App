@@ -41,6 +41,14 @@ export const productsApi = apiSlice.injectEndpoints({
       query: (id) => ({ url: `/products/${id}`, method: "delete" }),
       invalidatesTags: [{ type: "Product", id: "LIST" }],
     }),
+    updateStock: builder.mutation({
+      query: ({ id, delta }) => ({ url: `/products/${id}/stock`, method: "patch", data: { delta } }),
+      transformResponse: (response) => response.product,
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Product", id },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -52,4 +60,5 @@ export const {
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useUpdateStockMutation,
 } = productsApi;

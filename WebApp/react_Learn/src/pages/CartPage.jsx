@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../hooks/useCart.js";
 import { useAuth } from "../hooks/useAuth.js";
+import { resolveImageUrl } from "../utils/images.js";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
@@ -32,7 +33,7 @@ export function CartPage() {
         {items.map(({ product, quantity }) => (
           <li key={product.id} className="flex items-center gap-4 py-6">
             <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-neutral-100">
-              <img src={product.images?.[0]} alt={product.name} className="h-full w-full object-cover" />
+              <img src={resolveImageUrl(product.images?.[0])} alt={product.name} className="h-full w-full object-cover" />
             </div>
 
             <div className="flex-1">

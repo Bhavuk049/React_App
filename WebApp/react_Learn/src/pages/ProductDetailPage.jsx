@@ -85,7 +85,14 @@ export function ProductDetailPage() {
 
           {product.stock > 0 ? (
             <>
-              <p className="mt-4 text-sm text-neutral-500">{product.stock} in stock</p>
+              {product.stock <= 5 ? (
+                <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+                  Only {product.stock} left in stock — order soon!
+                </p>
+              ) : (
+                <p className="mt-4 text-sm text-emerald-600">In stock</p>
+              )}
 
               <div className="mt-6 flex items-center gap-4">
                 <div className="flex items-center rounded-md border border-neutral-200">

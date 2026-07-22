@@ -5,17 +5,18 @@ import {
   useCreateProductMutation,
   useDeleteProductMutation,
   useUpdateProductMutation,
+  useUpdateStockMutation,
 } from "../../store/api/productsApi.js";
 import { useAdminListCategoriesQuery } from "../../store/api/categoriesApi.js";
 import { resolveImageUrl } from "../../utils/images.js";
 import { ConfirmModal } from "../../components/ConfirmModal.jsx";
+import { StockAdjustModal } from "../../components/StockAdjustModal.jsx";
 
 const BarcodeScannerModal = lazy(() =>
   import("../../components/BarcodeScannerModal.jsx").then((m) => ({ default: m.BarcodeScannerModal })),
 );
 
 const MAX_PRODUCT_IMAGES = 5;
-const GST_RATE_OPTIONS = [0, 5, 12, 18, 28];
 
 function SortableHeader({ label, sortKeyName, activeSortKey, sortDirection, onSort }) {
   const isActive = activeSortKey === sortKeyName;
@@ -36,6 +37,7 @@ const emptyForm = {
   slug: "",
   description: "",
   price: "",
+  purchasePrice: "",
   compareAtPrice: "",
   stock: "0",
   categoryId: "",
@@ -56,6 +58,7 @@ export function AdminProductsPage() {
   const [createProduct] = useCreateProductMutation();
   const [updateProduct] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
+  const [updateStock] = useUpdateStockMutation();
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -65,6 +68,7 @@ export function AdminProductsPage() {
   const [newImageFiles, setNewImageFiles] = useState([]);
   const [newImagePreviews, setNewImagePreviews] = useState([]);
   const [pendingToggle, setPendingToggle] = useState(null);
+  const [pendingStockProduct, setPendingStockProduct] = useState(null);
   const [showScanner, setShowScanner] = useState(false);
   const [sortKey, setSortKey] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
@@ -126,6 +130,7 @@ export function AdminProductsPage() {
       slug: product.slug,
       description: product.description,
       price: String(product.price),
+      purchasePrice: product.purchasePrice ? String(product.purchasePrice) : "",
       compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : "",
       stock: String(product.stock),
       categoryId: product.categoryId,
@@ -181,6 +186,7 @@ export function AdminProductsPage() {
     formData.append("gstInclusive", String(form.gstInclusive));
     formData.append("isFeatured", String(form.isFeatured));
     if (form.compareAtPrice) formData.append("compareAtPrice", form.compareAtPrice);
+    if (form.purchasePrice) formData.append("purchasePrice", form.purchasePrice);
     if (editingId) formData.append("existingImages", JSON.stringify(existingImages));
     newImageFiles.forEach((file) => formData.append("images", file));
 
@@ -214,6 +220,11 @@ export function AdminProductsPage() {
     }
   }
 
+  async function handleStockAdjust(delta) {
+    await updateStock({ id: pendingStockProduct.id, delta }).unwrap();
+    setPendingStockProduct(null);
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -244,7 +255,24 @@ export function AdminProductsPage() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="mt-6 grid grid-cols-1 gap-4 rounded-lg border border-neutral-200 bg-white p-6 sm:grid-cols-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
+          <div className="max-h-full w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-neutral-900">
+                {editingId ? "Edit product" : "Add product"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                aria-label="Close"
+                className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </button>
+            </div>
+          <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-neutral-700">Name</label>
             <input
@@ -274,12 +302,23 @@ export function AdminProductsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700">Price</label>
+            <label className="block text-sm font-medium text-neutral-700">Sale price</label>
             <input
               type="number"
               required
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700">
+              Purchase price <span className="text-neutral-400">(admin only)</span>
+            </label>
+            <input
+              type="number"
+              value={form.purchasePrice}
+              onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })}
               className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
             />
           </div>
@@ -340,18 +379,17 @@ export function AdminProductsPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-700">GST rate</label>
-            <select
+            <label className="block text-sm font-medium text-neutral-700">GST rate (%)</label>
+            <input
+              type="number"
+              min="0"
+              max="50"
+              step="1"
+              required
               value={form.gstRate}
-              onChange={(e) => setForm({ ...form, gstRate: e.target.value })}
+              onChange={(e) => setForm({ ...form, gstRate: e.target.value.replace(/[^0-9].*$/, "") })}
               className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            >
-              {GST_RATE_OPTIONS.map((rate) => (
-                <option key={rate} value={rate}>
-                  {rate}%
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-neutral-700">Price and GST</label>
@@ -434,7 +472,9 @@ export function AdminProductsPage() {
               Cancel
             </button>
           </div>
-        </form>
+          </form>
+          </div>
+        </div>
       )}
 
       <div className="mt-6 overflow-hidden rounded-lg border border-neutral-200 bg-white">
@@ -525,6 +565,16 @@ export function AdminProductsPage() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <button
+                    onClick={() => setPendingStockProduct(p)}
+                    title="Update stock"
+                    aria-label="Update stock"
+                    className="mr-3 inline-flex rounded p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                      <path d="M10 2a.75.75 0 0 1 .75.75v6.5h6.5a.75.75 0 0 1 0 1.5h-6.5v6.5a.75.75 0 0 1-1.5 0v-6.5h-6.5a.75.75 0 0 1 0-1.5h6.5v-6.5A.75.75 0 0 1 10 2Z" />
+                    </svg>
+                  </button>
+                  <button
                     onClick={() => startEdit(p)}
                     disabled={p.isActive}
                     title={p.isActive ? "Unpublish this product first to edit it" : "Edit"}
@@ -568,6 +618,15 @@ export function AdminProductsPage() {
         onConfirm={confirmTogglePublished}
         onCancel={() => setPendingToggle(null)}
       />
+
+      {pendingStockProduct && (
+        <StockAdjustModal
+          key={pendingStockProduct.id}
+          product={pendingStockProduct}
+          onSubmit={handleStockAdjust}
+          onCancel={() => setPendingStockProduct(null)}
+        />
+      )}
 
       {showScanner && (
         <Suspense fallback={null}>

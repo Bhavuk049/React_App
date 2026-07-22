@@ -100,20 +100,37 @@ export async function createOrder(req, res) {
   res.status(201).json({ order });
 }
 
-const posSaleSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        productId: z.string().uuid(),
-        quantity: z.coerce.number().int().min(1),
-      }),
-    )
-    .min(1),
-  paymentMethod: z.enum(["CASH", "UPI", "UPI_PERSONAL", "CARD"]),
-  customerId: z.string().uuid().optional(),
-  guestName: z.string().trim().max(100).optional(),
-  guestPhone: z.string().regex(/^\d{10}$/, "Enter a 10-digit phone number").optional().or(z.literal("")),
-});
+const posSaleSchema = z
+  .object({
+    items: z
+      .array(
+        z.object({
+          productId: z.string().uuid(),
+          quantity: z.coerce.number().int().min(1),
+        }),
+      )
+      .min(1),
+    charges: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1).max(100),
+          amount: z.coerce.number().min(0),
+          gstRate: z.coerce.number().min(0).max(100).default(0),
+        }),
+      )
+      .optional(),
+    paymentMethod: z.enum(["CASH", "UPI", "UPI_PERSONAL", "CARD"]),
+    customerId: z.string().uuid().optional(),
+    guestName: z.string().trim().max(100).optional(),
+    guestPhone: z.string().regex(/^\d{10}$/, "Enter a 10-digit phone number").optional().or(z.literal("")),
+    discountType: z.enum(["FIXED", "PERCENTAGE"]).optional(),
+    discountValue: z.coerce.number().min(0).optional(),
+    roundOffAmount: z.coerce.number().optional(),
+  })
+  .refine((data) => !data.discountType || data.discountType !== "PERCENTAGE" || (data.discountValue ?? 0) <= 100, {
+    message: "Percentage discount can't exceed 100%",
+    path: ["discountValue"],
+  });
 
 export async function createPosSale(req, res) {
   const data = posSaleSchema.parse(req.body);
@@ -140,10 +157,22 @@ export async function createPosSale(req, res) {
     }
   }
 
-  const subtotal = data.items.reduce(
+  const productsSubtotal = data.items.reduce(
     (sum, item) => sum + Number(productById.get(item.productId).price) * item.quantity,
     0,
   );
+  const charges = data.charges ?? [];
+  const chargesSubtotal = charges.reduce((sum, charge) => sum + charge.amount, 0);
+  const subtotal = productsSubtotal + chargesSubtotal;
+
+  let discountAmount = 0;
+  if (data.discountType && data.discountValue) {
+    discountAmount =
+      data.discountType === "PERCENTAGE" ? (subtotal * data.discountValue) / 100 : data.discountValue;
+    discountAmount = Math.round(Math.min(discountAmount, subtotal) * 100) / 100;
+  }
+  const roundOffAmount = Math.round((data.roundOffAmount ?? 0) * 100) / 100;
+  const total = Math.round((subtotal - discountAmount + roundOffAmount) * 100) / 100;
 
   const order = await prisma.$transaction(async (tx) => {
     const created = await tx.order.create({
@@ -156,20 +185,34 @@ export async function createPosSale(req, res) {
         isPaid: true,
         status: "DELIVERED",
         subtotal,
+        discountType: discountAmount > 0 ? data.discountType : null,
+        discountValue: discountAmount > 0 ? data.discountValue : null,
+        discountAmount,
+        roundOffAmount,
         shippingFee: 0,
-        total: subtotal,
+        total,
         items: {
-          create: data.items.map((item) => {
-            const product = productById.get(item.productId);
-            return {
-              productId: product.id,
-              name: product.name,
-              price: product.price,
-              quantity: item.quantity,
-              gstRate: product.gstRate,
-              gstInclusive: product.gstInclusive,
-            };
-          }),
+          create: [
+            ...data.items.map((item) => {
+              const product = productById.get(item.productId);
+              return {
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: item.quantity,
+                gstRate: product.gstRate,
+                gstInclusive: product.gstInclusive,
+              };
+            }),
+            ...charges.map((charge) => ({
+              productId: null,
+              name: charge.name,
+              price: charge.amount,
+              quantity: 1,
+              gstRate: charge.gstRate,
+              gstInclusive: true,
+            })),
+          ],
         },
       },
       include: { user: { select: USER_SELECT }, address: true, items: true },
@@ -201,7 +244,7 @@ export async function listMyOrders(req, res) {
 export async function getMyOrder(req, res) {
   const order = await prisma.order.findUnique({
     where: { id: req.params.id },
-    include: { address: true, items: true },
+    include: { address: true, items: { include: { product: { select: { images: true } } } } },
   });
 
   if (!order || order.userId !== req.user.sub) {
@@ -214,7 +257,11 @@ export async function getMyOrder(req, res) {
 export async function adminGetOrder(req, res) {
   const order = await prisma.order.findUnique({
     where: { id: req.params.id },
-    include: { user: { select: USER_SELECT }, address: true, items: true },
+    include: {
+      user: { select: USER_SELECT },
+      address: true,
+      items: { include: { product: { select: { images: true } } } },
+    },
   });
 
   if (!order) {
@@ -328,19 +375,116 @@ export async function adminUpdateOrderStatus(req, res) {
   res.json({ order });
 }
 
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function startOfWeek(date) {
+  const d = startOfDay(date);
+  const day = d.getDay(); // 0 = Sunday
+  const diff = (day === 0 ? -6 : 1) - day; // shift back to Monday
+  return addDays(d, diff);
+}
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function addMonths(date, months) {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
+function daysInMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+}
+
+function toDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const dashboardStatsQuerySchema = z.object({
+  monthOffset: z.coerce.number().int().min(-120).max(0).default(0),
+});
+
+export async function adminDashboardStats(req, res) {
+  const { monthOffset } = dashboardStatsQuerySchema.parse(req.query);
+
+  const now = new Date();
+  const todayStart = startOfDay(now);
+  const todayEnd = addDays(todayStart, 1);
+  const currentWeekStart = startOfWeek(now);
+  const currentWeekEnd = addDays(currentWeekStart, 7);
+  const chartMonthStart = addMonths(startOfMonth(now), monthOffset);
+  const chartMonthEnd = addMonths(chartMonthStart, 1);
+  const totalDaysInMonth = daysInMonth(chartMonthStart);
+
+  const [todayAgg, weekAgg, chartOrders, products] = await Promise.all([
+    prisma.order.aggregate({
+      where: { createdAt: { gte: todayStart, lt: todayEnd } },
+      _sum: { total: true },
+    }),
+    prisma.order.aggregate({
+      where: { createdAt: { gte: currentWeekStart, lt: currentWeekEnd } },
+      _sum: { total: true },
+    }),
+    prisma.order.findMany({
+      where: { createdAt: { gte: chartMonthStart, lt: chartMonthEnd } },
+      select: { total: true, createdAt: true },
+    }),
+    prisma.product.findMany({ select: { stock: true, price: true } }),
+  ]);
+
+  const totalStockValue = products.reduce((sum, product) => sum + product.stock * Number(product.price), 0);
+
+  const dailyTotals = new Map();
+  for (let i = 0; i < totalDaysInMonth; i += 1) {
+    dailyTotals.set(toDateString(addDays(chartMonthStart, i)), 0);
+  }
+  for (const order of chartOrders) {
+    const key = toDateString(order.createdAt);
+    if (dailyTotals.has(key)) {
+      dailyTotals.set(key, dailyTotals.get(key) + Number(order.total));
+    }
+  }
+
+  res.json({
+    todayTotal: todayAgg._sum.total ?? 0,
+    weekTotal: weekAgg._sum.total ?? 0,
+    totalStockValue,
+    chart: {
+      monthOffset,
+      startDate: toDateString(chartMonthStart),
+      endDate: toDateString(addDays(chartMonthStart, totalDaysInMonth - 1)),
+      isCurrentMonth: monthOffset === 0,
+      days: Array.from(dailyTotals.entries()).map(([date, total]) => ({ date, total })),
+    },
+  });
+}
+
 const adminListOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.union([z.coerce.number().int().min(1).max(500), z.literal("all")]).default(20),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   channel: z.enum(["ONLINE", "POS"]).optional(),
+  status: z.enum(["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"]).optional(),
 });
 
 export async function adminListOrders(req, res) {
-  const { page, pageSize, startDate, endDate, channel } = adminListOrdersQuerySchema.parse(req.query);
+  const { page, pageSize, startDate, endDate, channel, status } = adminListOrdersQuerySchema.parse(req.query);
 
   const where = {
     ...(channel ? { channel } : {}),
+    ...(status ? { status } : {}),
     ...(startDate || endDate
       ? {
           createdAt: {

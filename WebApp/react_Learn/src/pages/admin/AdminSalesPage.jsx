@@ -21,12 +21,15 @@ const STATUS_STYLES = {
   CANCELLED: "bg-red-100 text-red-700",
 };
 
+const ORDER_STATUSES = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+
 const DEFAULT_RANGE = getPresetDateRange("today");
 
 export function AdminSalesPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState("20");
   const [channel, setChannel] = useState("");
+  const [status, setStatus] = useState("");
   const [datePreset, setDatePreset] = useState("today");
   const [startDate, setStartDate] = useState(DEFAULT_RANGE.startDate);
   const [endDate, setEndDate] = useState(DEFAULT_RANGE.endDate);
@@ -35,6 +38,7 @@ export function AdminSalesPage() {
     page,
     pageSize,
     ...(channel ? { channel } : {}),
+    ...(status ? { status } : {}),
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
   });
@@ -49,6 +53,11 @@ export function AdminSalesPage() {
 
   function handleChannelChange(value) {
     setChannel(value);
+    setPage(1);
+  }
+
+  function handleStatusChange(value) {
+    setStatus(value);
     setPage(1);
   }
 
@@ -92,6 +101,21 @@ export function AdminSalesPage() {
             {CHANNEL_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-neutral-700">Status</label>
+          <select
+            value={status}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className="mt-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          >
+            <option value="">All statuses</option>
+            {ORDER_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
               </option>
             ))}
           </select>
@@ -164,6 +188,7 @@ export function AdminSalesPage() {
               <th className="px-4 py-3 font-medium">Channel</th>
               <th className="px-4 py-3 font-medium">Customer</th>
               <th className="px-4 py-3 font-medium">Items</th>
+              <th className="px-4 py-3 font-medium">Discount</th>
               <th className="px-4 py-3 font-medium">Total</th>
               <th className="px-4 py-3 font-medium">Payment</th>
               <th className="px-4 py-3 font-medium">Status</th>
@@ -173,13 +198,13 @@ export function AdminSalesPage() {
           <tbody className="divide-y divide-neutral-100">
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-neutral-500">
+                <td colSpan={9} className="px-4 py-6 text-center text-neutral-500">
                   Loading...
                 </td>
               </tr>
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-neutral-500">
+                <td colSpan={9} className="px-4 py-6 text-center text-neutral-500">
                   No sales found.
                 </td>
               </tr>
@@ -211,6 +236,16 @@ export function AdminSalesPage() {
                   </td>
                   <td className="px-4 py-3 text-neutral-500">
                     {order.items.reduce((sum, item) => sum + item.quantity, 0)}
+                  </td>
+                  <td className="px-4 py-3 text-neutral-500">
+                    {Number(order.discountAmount) > 0 ? (
+                      <span className="text-red-600">
+                        -{currency.format(order.discountAmount)}
+                        {order.discountType === "PERCENTAGE" ? ` (${Number(order.discountValue)}%)` : ""}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-4 py-3 font-medium text-neutral-900">{currency.format(order.total)}</td>
                   <td className="px-4 py-3 text-neutral-500">

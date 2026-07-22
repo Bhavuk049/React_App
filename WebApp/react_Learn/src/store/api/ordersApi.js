@@ -30,6 +30,10 @@ export const ordersApi = apiSlice.injectEndpoints({
       query: (params = {}) => ({ url: "/orders/admin", params }),
       providesTags: ["Order"],
     }),
+    adminDashboardStats: builder.query({
+      query: (params = {}) => ({ url: "/orders/admin/dashboard-stats", params }),
+      providesTags: ["Order"],
+    }),
     adminGetOrder: builder.query({
       query: (id) => ({ url: `/orders/admin/${id}` }),
       transformResponse: (response) => response.order,
@@ -81,6 +85,7 @@ export const {
   useListMyOrdersQuery,
   useGetMyOrderQuery,
   useAdminListOrdersQuery,
+  useAdminDashboardStatsQuery,
   useAdminGetOrderQuery,
   useAdminUpdateOrderStatusMutation,
   useAdminUpdateOrderPaymentStatusMutation,

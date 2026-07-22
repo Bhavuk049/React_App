@@ -25,7 +25,10 @@ export function InvoiceDocument({ order, settings, customer }) {
     <div className="mx-auto max-w-3xl bg-white p-8 text-sm text-neutral-800">
       <div className="flex items-start justify-between border-b border-neutral-300 pb-6">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">TheUniqPick</h1>
+          <div className="flex items-center gap-2">
+            <img src="/logo.webp" alt="" className="h-16 w-auto" />
+            <span className="text-xl font-semibold text-neutral-900">TheUniqPick</span>
+          </div>
           {settings?.addressLine1 && (
             <p className="mt-1 text-neutral-600">
               {settings.addressLine1}
@@ -126,6 +129,29 @@ export function InvoiceDocument({ order, settings, customer }) {
             <span>Shipping</span>
             <span>{Number(order.shippingFee) === 0 ? "Free" : currency.format(order.shippingFee)}</span>
           </div>
+          {Number(order.discountAmount) > 0 && (
+            <div className="flex justify-between text-neutral-600">
+              <span>
+                Discount{order.discountType === "PERCENTAGE" ? ` (${Number(order.discountValue)}%)` : ""}
+              </span>
+              <span>-{currency.format(order.discountAmount)}</span>
+            </div>
+          )}
+          {Number(order.additionalCharge) > 0 && (
+            <div className="flex justify-between text-neutral-600">
+              <span>Additional charge</span>
+              <span>+{currency.format(order.additionalCharge)}</span>
+            </div>
+          )}
+          {Number(order.roundOffAmount) !== 0 && (
+            <div className="flex justify-between text-neutral-600">
+              <span>Round off</span>
+              <span>
+                {Number(order.roundOffAmount) > 0 ? "+" : "-"}
+                {currency.format(Math.abs(Number(order.roundOffAmount)))}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between border-t border-neutral-300 pt-1 text-base font-semibold text-neutral-900">
             <span>Grand total</span>
             <span>{currency.format(order.total)}</span>

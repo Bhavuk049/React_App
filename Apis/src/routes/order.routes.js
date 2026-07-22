@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  adminDashboardStats,
   adminGetOrder,
   adminListOrders,
   adminUpdateOrderPaymentStatus,
@@ -20,6 +21,7 @@ router.post("/pos", requireAuth, requireAdmin, asyncHandler(createPosSale));
 router.get("/me", requireAuth, asyncHandler(listMyOrders));
 router.get("/me/:id", requireAuth, asyncHandler(getMyOrder));
 router.get("/admin", requireAuth, requireAdmin, asyncHandler(adminListOrders));
+router.get("/admin/dashboard-stats", requireAuth, requireAdmin, asyncHandler(adminDashboardStats));
 router.get("/admin/:id", requireAuth, requireAdmin, asyncHandler(adminGetOrder));
 router.patch("/admin/:id/status", requireAuth, requireAdmin, asyncHandler(adminUpdateOrderStatus));
 router.patch("/admin/:id/paid", requireAuth, requireAdmin, asyncHandler(adminUpdateOrderPaymentStatus));

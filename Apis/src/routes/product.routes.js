@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   adminGetProduct,
   adminListProducts,
+  adminUpdateStock,
   createProduct,
   deleteProduct,
   getProduct,
@@ -34,6 +35,7 @@ router.patch(
   processProductImages,
   asyncHandler(updateProduct),
 );
+router.patch("/:id/stock", requireAuth, requireAdmin, asyncHandler(adminUpdateStock));
 router.delete("/:id", requireAuth, requireAdmin, asyncHandler(deleteProduct));
 
 export default router;

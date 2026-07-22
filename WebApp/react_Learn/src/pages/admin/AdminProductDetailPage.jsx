@@ -13,8 +13,8 @@ export function AdminProductDetailPage() {
     return <p className="text-sm text-neutral-500">Loading...</p>;
   }
 
-  const { product, stockLog } = data;
-  const totalReduced = stockLog.reduce((sum, entry) => sum + entry.quantity, 0);
+  const { product, productLogs } = data;
+  const netChange = productLogs.reduce((sum, entry) => sum + entry.delta, 0);
 
   return (
     <div>
@@ -46,8 +46,14 @@ export function AdminProductDetailPage() {
               <dd className="text-neutral-600">{product.category?.name}</dd>
             </div>
             <div className="flex gap-2">
-              <dt className="font-medium text-neutral-700">Price:</dt>
+              <dt className="font-medium text-neutral-700">Sale price:</dt>
               <dd className="text-neutral-600">{currency.format(product.price)}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-medium text-neutral-700">Purchase price:</dt>
+              <dd className="text-neutral-600">
+                {product.purchasePrice ? currency.format(product.purchasePrice) : "—"}
+              </dd>
             </div>
             <div className="flex gap-2">
               <dt className="font-medium text-neutral-700">Current stock:</dt>
@@ -93,52 +99,78 @@ export function AdminProductDetailPage() {
 
       <section className="mt-6 rounded-lg border border-neutral-200 bg-white">
         <div className="border-b border-neutral-200 p-6 pb-4">
-          <h2 className="text-base font-semibold text-neutral-900">Stock reduction log</h2>
+          <h2 className="text-base font-semibold text-neutral-900">Product logs</h2>
           <p className="mt-1 text-sm text-neutral-500">
-            {totalReduced} unit{totalReduced === 1 ? "" : "s"} sold across {stockLog.length} order
-            {stockLog.length === 1 ? "" : "s"}.
+            Net change of {netChange >= 0 ? "+" : ""}
+            {netChange} unit{Math.abs(netChange) === 1 ? "" : "s"} across {productLogs.length} entr
+            {productLogs.length === 1 ? "y" : "ies"}.
           </p>
         </div>
         <table className="min-w-full divide-y divide-neutral-200 text-sm">
           <thead className="bg-neutral-50 text-left text-neutral-500">
             <tr>
               <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Order</th>
-              <th className="px-4 py-3 font-medium">Customer</th>
-              <th className="px-4 py-3 font-medium">Order status</th>
-              <th className="px-4 py-3 font-medium">Qty reduced</th>
+              <th className="px-4 py-3 font-medium">Source</th>
+              <th className="px-4 py-3 font-medium">Details</th>
+              <th className="px-4 py-3 text-right font-medium">Change</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
-            {stockLog.length === 0 ? (
+            {productLogs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-neutral-500">
-                  No stock reductions yet — nothing sold.
+                <td colSpan={4} className="px-4 py-6 text-center text-neutral-500">
+                  No stock activity yet.
                 </td>
               </tr>
             ) : (
-              stockLog.map((entry) => (
-                <tr key={entry.id}>
+              productLogs.map((entry) => (
+                <tr key={`${entry.type}-${entry.id}`}>
                   <td className="px-4 py-3 text-neutral-500">
-                    {new Date(entry.order.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-neutral-900">
-                    <Link to={`/admin/orders/${entry.order.id}`} className="hover:underline">
-                      #{entry.order.id.slice(0, 8).toUpperCase()}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">
-                    {entry.order.user
-                      ? [entry.order.user.firstName, entry.order.user.lastName].filter(Boolean).join(" ") ||
-                        entry.order.user.email
-                      : `${entry.order.guestName || "Walk-in customer"} (POS)`}
+                    {new Date(entry.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600">
-                      {entry.order.status}
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        entry.type === "order" ? "bg-sky-100 text-sky-700" : "bg-neutral-100 text-neutral-600"
+                      }`}
+                    >
+                      {entry.type === "order" ? "Order" : "Manual"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-medium text-red-600">-{entry.quantity}</td>
+                  <td className="px-4 py-3 text-neutral-500">
+                    {entry.type === "order" ? (
+                      <>
+                        <Link to={`/admin/orders/${entry.order.id}`} className="font-medium text-neutral-900 hover:underline">
+                          #{entry.order.id.slice(0, 8).toUpperCase()}
+                        </Link>{" "}
+                        —{" "}
+                        {entry.order.user
+                          ? [entry.order.user.firstName, entry.order.user.lastName].filter(Boolean).join(" ") ||
+                            entry.order.user.email
+                          : `${entry.order.guestName || "Walk-in customer"} (POS)`}
+                      </>
+                    ) : (
+                      <>
+                        Manual adjustment
+                        {entry.admin && (
+                          <>
+                            {" "}
+                            by{" "}
+                            {[entry.admin.firstName, entry.admin.lastName].filter(Boolean).join(" ") ||
+                              entry.admin.email}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </td>
+                  <td
+                    className={`px-4 py-3 text-right font-medium ${
+                      entry.delta < 0 ? "text-red-600" : "text-green-600"
+                    }`}
+                  >
+                    {entry.delta > 0 ? "+" : ""}
+                    {entry.delta}
+                  </td>
                 </tr>
               ))
             )}

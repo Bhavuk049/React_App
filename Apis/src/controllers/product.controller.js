@@ -16,10 +16,11 @@ const productSchema = z.object({
   slug: z.string().min(2).regex(/^[a-z0-9-]+$/, "slug must be lowercase kebab-case"),
   description: z.string().min(1),
   price: z.coerce.number().positive(),
+  purchasePrice: z.coerce.number().min(0).optional(),
   compareAtPrice: z.coerce.number().positive().optional(),
   stock: z.coerce.number().int().min(0).optional(),
   barcode: z.string().trim().max(64).optional(),
-  gstRate: z.coerce.number().min(0).max(100).optional(),
+  gstRate: z.coerce.number().int().min(0).max(50).optional(),
   gstInclusive: booleanString,
   isActive: booleanString,
   isFeatured: booleanString,
@@ -73,6 +74,7 @@ export async function listProducts(req, res) {
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
+      omit: { purchasePrice: true },
       include: { category: true },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
@@ -90,6 +92,7 @@ export async function listProducts(req, res) {
 export async function getProduct(req, res) {
   const product = await prisma.product.findUnique({
     where: { slug: req.params.slug },
+    omit: { purchasePrice: true },
     include: { category: true },
   });
   if (!product || !product.isActive || !product.category.isActive) {
@@ -176,27 +179,84 @@ export async function adminGetProduct(req, res) {
     return res.status(404).json({ error: "Product not found" });
   }
 
-  // Stock is only ever reduced at checkout, so each order item IS the stock-reduction log entry.
-  const stockLog = await prisma.orderItem.findMany({
-    where: { productId: req.params.id },
-    select: {
-      id: true,
-      quantity: true,
-      order: {
-        select: {
-          id: true,
-          createdAt: true,
-          status: true,
-          channel: true,
-          guestName: true,
-          user: { select: { firstName: true, lastName: true, email: true } },
+  // Product logs merge two sources: order items (stock reduced at checkout) and
+  // manual stock adjustments made from the admin "Update stock" modal.
+  const [orderReductions, manualAdjustments] = await Promise.all([
+    prisma.orderItem.findMany({
+      where: { productId: req.params.id },
+      select: {
+        id: true,
+        quantity: true,
+        order: {
+          select: {
+            id: true,
+            createdAt: true,
+            status: true,
+            channel: true,
+            guestName: true,
+            user: { select: { firstName: true, lastName: true, email: true } },
+          },
         },
       },
-    },
-    orderBy: { order: { createdAt: "desc" } },
-  });
+    }),
+    prisma.productStockLog.findMany({
+      where: { productId: req.params.id },
+      select: {
+        id: true,
+        delta: true,
+        createdAt: true,
+        admin: { select: { firstName: true, lastName: true, email: true } },
+      },
+    }),
+  ]);
 
-  res.json({ product, stockLog });
+  const productLogs = [
+    ...orderReductions.map((item) => ({
+      type: "order",
+      id: item.id,
+      delta: -item.quantity,
+      createdAt: item.order.createdAt,
+      order: item.order,
+    })),
+    ...manualAdjustments.map((log) => ({
+      type: "manual",
+      id: log.id,
+      delta: log.delta,
+      createdAt: log.createdAt,
+      admin: log.admin,
+    })),
+  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  res.json({ product, productLogs });
+}
+
+const stockAdjustSchema = z.object({
+  delta: z.coerce.number().int().refine((v) => v !== 0, "Enter a non-zero quantity"),
+});
+
+// Stock adjustments are independent of the publish lock — restocking or correcting
+// inventory shouldn't require unpublishing a live product first.
+export async function adminUpdateStock(req, res) {
+  const { delta } = stockAdjustSchema.parse(req.body);
+
+  const current = await prisma.product.findUnique({ where: { id: req.params.id } });
+  if (!current) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+  if (current.stock + delta < 0) {
+    return res.status(400).json({ error: `Cannot reduce stock below 0 (current stock: ${current.stock}).` });
+  }
+
+  const [product] = await prisma.$transaction([
+    prisma.product.update({
+      where: { id: req.params.id },
+      data: { stock: { increment: delta } },
+    }),
+    prisma.productStockLog.create({
+      data: { productId: req.params.id, delta, adminId: req.user.sub },
+    }),
+  ]);
+  res.json({ product });
 }
 
 export async function adminListProducts(req, res) {

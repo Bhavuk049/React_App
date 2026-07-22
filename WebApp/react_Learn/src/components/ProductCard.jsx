@@ -14,10 +14,17 @@ export function ProductCard({ product }) {
           alt={product.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        {product.stock === 0 && (
+        {product.stock === 0 ? (
           <span className="absolute left-2 top-2 rounded-full bg-neutral-900/80 px-2.5 py-1 text-xs font-medium text-white">
             Out of stock
           </span>
+        ) : (
+          product.stock <= 5 && (
+            <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-red-600 px-2.5 py-1 text-xs font-medium text-white">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+              Only {product.stock} left — buy fast!
+            </span>
+          )
         )}
       </div>
       <div className="mt-3 space-y-1">

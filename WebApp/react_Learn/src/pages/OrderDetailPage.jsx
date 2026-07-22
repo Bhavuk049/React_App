@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useGetMyOrderQuery } from "../store/api/ordersApi.js";
 import { paymentMethodLabel } from "../utils/paymentMethods.js";
+import { resolveImageUrl } from "../utils/images.js";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
@@ -67,8 +68,19 @@ export function OrderDetailPage() {
         </h2>
         <ul className="mt-3 divide-y divide-neutral-100">
           {order.items.map((item) => (
-            <li key={item.id} className="flex items-center justify-between py-3 text-sm">
-              <span className="text-neutral-700">
+            <li key={item.id} className="flex items-center gap-3 py-3 text-sm">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-100">
+                {item.productId ? (
+                  <img
+                    src={resolveImageUrl(item.product?.images?.[0])}
+                    alt={item.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xs font-medium text-neutral-400">₹</span>
+                )}
+              </div>
+              <span className="flex-1 text-neutral-700">
                 {item.name} <span className="text-neutral-400">× {item.quantity}</span>
               </span>
               <span className="font-medium text-neutral-900">{currency.format(item.price * item.quantity)}</span>
@@ -85,6 +97,27 @@ export function OrderDetailPage() {
             <span>Shipping</span>
             <span>{Number(order.shippingFee) === 0 ? "Free" : currency.format(order.shippingFee)}</span>
           </div>
+          {Number(order.discountAmount) > 0 && (
+            <div className="flex justify-between text-red-600">
+              <span>Discount{order.discountType === "PERCENTAGE" ? ` (${Number(order.discountValue)}%)` : ""}</span>
+              <span>-{currency.format(order.discountAmount)}</span>
+            </div>
+          )}
+          {Number(order.additionalCharge) > 0 && (
+            <div className="flex justify-between text-neutral-500">
+              <span>Additional charge</span>
+              <span>+{currency.format(order.additionalCharge)}</span>
+            </div>
+          )}
+          {Number(order.roundOffAmount) !== 0 && (
+            <div className="flex justify-between text-neutral-500">
+              <span>Round off</span>
+              <span>
+                {Number(order.roundOffAmount) > 0 ? "+" : "-"}
+                {currency.format(Math.abs(Number(order.roundOffAmount)))}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-base font-semibold text-neutral-900">
             <span>Total</span>
             <span>{currency.format(order.total)}</span>

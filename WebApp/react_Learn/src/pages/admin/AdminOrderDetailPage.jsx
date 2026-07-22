@@ -8,6 +8,7 @@ import {
 } from "../../store/api/ordersApi.js";
 import { ConfirmModal } from "../../components/ConfirmModal.jsx";
 import { paymentMethodLabel } from "../../utils/paymentMethods.js";
+import { resolveImageUrl } from "../../utils/images.js";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
@@ -332,7 +333,22 @@ export function AdminOrderDetailPage() {
           <tbody className="divide-y divide-neutral-100">
             {order.items.map((item) => (
               <tr key={item.id}>
-                <td className="py-3 text-neutral-900">{item.name}</td>
+                <td className="py-3 text-neutral-900">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-neutral-100">
+                      {item.productId ? (
+                        <img
+                          src={resolveImageUrl(item.product?.images?.[0])}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs font-medium text-neutral-400">₹</span>
+                      )}
+                    </div>
+                    <span>{item.name}</span>
+                  </div>
+                </td>
                 <td className="py-3 text-neutral-500">{currency.format(item.price)}</td>
                 <td className="py-3 text-neutral-500">{item.quantity}</td>
                 <td className="py-3 text-right font-medium text-neutral-900">
@@ -352,6 +368,27 @@ export function AdminOrderDetailPage() {
             <span>Shipping</span>
             <span>{Number(order.shippingFee) === 0 ? "Free" : currency.format(order.shippingFee)}</span>
           </div>
+          {Number(order.discountAmount) > 0 && (
+            <div className="flex justify-between text-red-600">
+              <span>Discount{order.discountType === "PERCENTAGE" ? ` (${Number(order.discountValue)}%)` : ""}</span>
+              <span>-{currency.format(order.discountAmount)}</span>
+            </div>
+          )}
+          {Number(order.additionalCharge) > 0 && (
+            <div className="flex justify-between text-neutral-500">
+              <span>Additional charge</span>
+              <span>+{currency.format(order.additionalCharge)}</span>
+            </div>
+          )}
+          {Number(order.roundOffAmount) !== 0 && (
+            <div className="flex justify-between text-neutral-500">
+              <span>Round off</span>
+              <span>
+                {Number(order.roundOffAmount) > 0 ? "+" : "-"}
+                {currency.format(Math.abs(Number(order.roundOffAmount)))}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-base font-semibold text-neutral-900">
             <span>Total</span>
             <span>{currency.format(order.total)}</span>

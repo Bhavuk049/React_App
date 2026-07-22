@@ -16,11 +16,14 @@ const STATUS_STYLES = {
   CANCELLED: "bg-red-100 text-red-700",
 };
 
+const ORDER_STATUSES = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+
 const DEFAULT_RANGE = getPresetDateRange("today");
 
 export function AdminOrdersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState("20");
+  const [status, setStatus] = useState("");
   const [datePreset, setDatePreset] = useState("today");
   const [startDate, setStartDate] = useState(DEFAULT_RANGE.startDate);
   const [endDate, setEndDate] = useState(DEFAULT_RANGE.endDate);
@@ -29,6 +32,7 @@ export function AdminOrdersPage() {
     page,
     pageSize,
     channel: "ONLINE",
+    ...(status ? { status } : {}),
     ...(startDate ? { startDate } : {}),
     ...(endDate ? { endDate } : {}),
   });
@@ -38,6 +42,11 @@ export function AdminOrdersPage() {
 
   function handlePageSizeChange(value) {
     setPageSize(value);
+    setPage(1);
+  }
+
+  function handleStatusChange(value) {
+    setStatus(value);
     setPage(1);
   }
 
@@ -71,6 +80,21 @@ export function AdminOrdersPage() {
             {DATE_RANGE_PRESETS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-neutral-700">Status</label>
+          <select
+            value={status}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            className="mt-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          >
+            <option value="">All statuses</option>
+            {ORDER_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
               </option>
             ))}
           </select>
