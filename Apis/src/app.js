@@ -11,6 +11,7 @@ import userRoutes from "./routes/user.routes.js";
 import pincodeRoutes from "./routes/pincode.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
+import legalPageRoutes from "./routes/legalPage.routes.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -31,6 +32,7 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/pincode", pincodeRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/settings", settingsRoutes);
+app.use("/api/v1/legal-pages", legalPageRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

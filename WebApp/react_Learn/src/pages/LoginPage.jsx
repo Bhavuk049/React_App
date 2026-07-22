@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 
 export function LoginPage() {
@@ -134,6 +134,13 @@ export function LoginPage() {
           >
             {submitting ? "Sending code..." : "Send code"}
           </button>
+
+          <p className="text-center text-xs text-neutral-500">
+            By continuing, you agree to our{" "}
+            <Link to="/terms-of-service" className="underline hover:text-rose-600">
+              Terms of service
+            </Link>
+          </p>
 
           {import.meta.env.DEV && (
             <button

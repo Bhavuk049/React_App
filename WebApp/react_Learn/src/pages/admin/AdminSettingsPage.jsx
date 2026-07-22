@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useGetSettingsQuery, useUpdateSettingsMutation } from "../../store/api/settingsApi.js";
 import { useLazyLookupPincodeQuery } from "../../store/api/usersApi.js";
+import { useAdminListLegalPagesQuery, useAdminUpdateLegalPageMutation } from "../../store/api/legalPagesApi.js";
 import { INDIAN_STATES } from "../../utils/indianStates.js";
 import { PhoneInput } from "../../components/PhoneInput.jsx";
 import { FieldError } from "../../components/FieldError.jsx";
 import { getFieldErrors } from "../../utils/formErrors.js";
 import { Icon, SectionHeading } from "../../components/Icon.jsx";
+import { RichTextEditor } from "../../components/RichTextEditor.jsx";
 import { ICON_PATHS } from "../../utils/iconPaths.js";
 
 const emptyForm = {
@@ -25,6 +27,8 @@ export function AdminSettingsPage() {
   const { data: settings, isLoading: loading } = useGetSettingsQuery();
   const [updateSettings] = useUpdateSettingsMutation();
   const [triggerLookupPincode] = useLazyLookupPincodeQuery();
+  const { data: legalPages = [] } = useAdminListLegalPagesQuery();
+  const [updateLegalPage] = useAdminUpdateLegalPageMutation();
 
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -33,6 +37,12 @@ export function AdminSettingsPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [pincodeStatus, setPincodeStatus] = useState("");
   const [loadedSettings, setLoadedSettings] = useState(null);
+
+  const [editingPage, setEditingPage] = useState(null);
+  const [pageTitle, setPageTitle] = useState("");
+  const [pageContent, setPageContent] = useState("");
+  const [pageError, setPageError] = useState("");
+  const [pageSaving, setPageSaving] = useState(false);
 
   if (settings && settings !== loadedSettings) {
     setLoadedSettings(settings);
@@ -88,6 +98,30 @@ export function AdminSettingsPage() {
       }
     } else {
       setPincodeStatus("");
+    }
+  }
+
+  function startEditLegalPage(page) {
+    setEditingPage(page);
+    setPageTitle(page.title);
+    setPageContent(page.content);
+    setPageError("");
+  }
+
+  async function handleLegalPageSubmit(e) {
+    e.preventDefault();
+    setPageError("");
+    setPageSaving(true);
+    try {
+      await updateLegalPage({
+        slug: editingPage.slug,
+        payload: { title: pageTitle, content: pageContent },
+      }).unwrap();
+      setEditingPage(null);
+    } catch (err) {
+      setPageError(err.data?.error ?? "Failed to save page.");
+    } finally {
+      setPageSaving(false);
     }
   }
 
@@ -396,6 +430,96 @@ export function AdminSettingsPage() {
           </div>
         </div>
       </form>
+
+      <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
+        <SectionHeading icon={ICON_PATHS.info} iconClassName="bg-violet-50 text-violet-600">
+          Legal pages
+        </SectionHeading>
+        <p className="mt-1 text-sm text-neutral-500">
+          Content shown to customers on the storefront footer. Select a page to update it.
+        </p>
+        <ul className="mt-4 divide-y divide-neutral-100">
+          {legalPages.map((page) => (
+            <li key={page.slug} className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-sm font-medium text-neutral-900">{page.title}</p>
+                <p className="text-xs text-neutral-400">/{page.slug}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => startEditLegalPage(page)}
+                className="flex items-center gap-1.5 rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+              >
+                <Icon path={ICON_PATHS.edit} className="h-3.5 w-3.5" />
+                Edit
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {editingPage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
+          <div className="max-h-full w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                  <Icon path={ICON_PATHS.edit} className="h-4 w-4" />
+                </span>
+                <h2 className="text-lg font-semibold text-neutral-900">Edit {editingPage.title}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingPage(null)}
+                aria-label="Close"
+                className="rounded p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+              >
+                <Icon path={ICON_PATHS.close} className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleLegalPageSubmit} className="mt-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700">Title</label>
+                <input
+                  required
+                  value={pageTitle}
+                  onChange={(e) => setPageTitle(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700">Content</label>
+                <div className="mt-1">
+                  <RichTextEditor value={pageContent} onChange={setPageContent} resetKey={editingPage?.slug} />
+                </div>
+                <p className="mt-1 text-xs text-neutral-400">
+                  Use the toolbar to bold, italicize, underline, or add lists and links.
+                </p>
+              </div>
+
+              {pageError && <p className="text-sm text-red-600">{pageError}</p>}
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={pageSaving}
+                  className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-neutral-400"
+                >
+                  {!pageSaving && <Icon path={ICON_PATHS.check} className="h-4 w-4" />}
+                  {pageSaving ? "Saving..." : "Save changes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingPage(null)}
+                  className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

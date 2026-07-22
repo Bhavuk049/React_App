@@ -13,6 +13,7 @@ import { AccountPage } from "./pages/AccountPage.jsx";
 import { OrdersPage } from "./pages/OrdersPage.jsx";
 import { OrderDetailPage } from "./pages/OrderDetailPage.jsx";
 import { OrderInvoicePage } from "./pages/OrderInvoicePage.jsx";
+import { LegalPagePage } from "./pages/LegalPagePage.jsx";
 import { AdminDashboard } from "./pages/admin/AdminDashboard.jsx";
 import { AdminProductsPage } from "./pages/admin/AdminProductsPage.jsx";
 import { AdminProductDetailPage } from "./pages/admin/AdminProductDetailPage.jsx";
@@ -35,6 +36,11 @@ function App() {
         <Route path="/products/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/privacy-policy" element={<LegalPagePage slug="privacy-policy" />} />
+        <Route path="/legal-notice" element={<LegalPagePage slug="legal-notice" />} />
+        <Route path="/shipping-policy" element={<LegalPagePage slug="shipping-policy" />} />
+        <Route path="/terms-of-service" element={<LegalPagePage slug="terms-of-service" />} />
+        <Route path="/refund-policy" element={<LegalPagePage slug="refund-policy" />} />
         <Route element={<RequireAuth />}>
           <Route path="/account" element={<AccountPage />} />
           <Route path="/orders" element={<OrdersPage />} />

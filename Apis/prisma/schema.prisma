@@ -12,6 +12,18 @@ enum Role {
   ADMIN
 }
 
+// Fixed set of editable content pages (Privacy Policy, Terms, etc). Admin can edit
+// title/content for the existing slugs but not create or delete rows.
+model LegalPage {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  content   String
+  updatedAt DateTime @updatedAt
+
+  @@map("legal_pages")
+}
+
 // Singleton row (fixed id) holding store-wide configuration — support contact, GSTIN, shop address.
 model StoreSettings {
   id           String   @id @default("store")

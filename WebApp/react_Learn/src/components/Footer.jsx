@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth.js";
 import { useGetSettingsQuery } from "../store/api/settingsApi.js";
+import { useListLegalPagesQuery } from "../store/api/legalPagesApi.js";
 import { Icon } from "./Icon.jsx";
 import { ICON_PATHS } from "../utils/iconPaths.js";
 
 export function Footer() {
-  const { user } = useAuth();
   const { data: settings } = useGetSettingsQuery();
+  const { data: legalPages = [] } = useListLegalPagesQuery();
 
   const addressLines = [settings?.addressLine1, settings?.addressLine2].filter(Boolean);
   const cityLine = [settings?.city, settings?.state, settings?.postalCode].filter(Boolean).join(", ");
@@ -23,26 +23,13 @@ export function Footer() {
         <div>
           <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-rose-600">Quick links</h3>
           <ul className="mt-3 space-y-2 text-sm text-neutral-600">
-            <li>
-              <Link to="/" className="hover:text-rose-600">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/products" className="hover:text-rose-600">
-                Shop
-              </Link>
-            </li>
-            <li>
-              <Link to="/cart" className="hover:text-rose-600">
-                Cart
-              </Link>
-            </li>
-            <li>
-              <Link to={user ? "/account" : "/login"} className="hover:text-rose-600">
-                {user ? "My account" : "Login"}
-              </Link>
-            </li>
+            {legalPages.map((page) => (
+              <li key={page.slug}>
+                <Link to={`/${page.slug}`} className="hover:text-rose-600">
+                  {page.title}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
 
