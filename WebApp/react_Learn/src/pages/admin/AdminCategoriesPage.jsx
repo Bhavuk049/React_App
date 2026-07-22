@@ -6,8 +6,14 @@ import {
   useUpdateCategoryMutation,
 } from "../../store/api/categoriesApi.js";
 import { ConfirmModal } from "../../components/ConfirmModal.jsx";
+import { Icon, SectionHeading } from "../../components/Icon.jsx";
+import { ICON_PATHS } from "../../utils/iconPaths.js";
 
 const emptyForm = { name: "", slug: "", description: "" };
+
+const fieldClass =
+  "mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400";
+const labelClass = "block text-sm font-medium text-neutral-700";
 
 export function AdminCategoriesPage() {
   const { data: categories = [] } = useAdminListCategoriesQuery();
@@ -88,42 +94,54 @@ export function AdminCategoriesPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-neutral-900">Categories</h1>
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white">
+          <Icon path={ICON_PATHS.categories} className="h-5 w-5" />
+        </span>
+        <h1 className="text-xl font-semibold text-neutral-900">Categories</h1>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 grid grid-cols-1 gap-4 rounded-lg border border-neutral-200 bg-white p-6 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-neutral-700">Name</label>
-          <input
-            required
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-700">Slug</label>
-          <input
-            required
-            value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-neutral-700">Description (optional)</label>
-          <textarea
-            rows={3}
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <button type="submit" className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800">
-            Add category
-          </button>
-        </div>
-      </form>
+      <div className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
+        <SectionHeading icon={ICON_PATHS.plus}>Add category</SectionHeading>
+        <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className={labelClass}>Name</label>
+            <input
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className={fieldClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Slug</label>
+            <input
+              required
+              value={form.slug}
+              onChange={(e) => setForm({ ...form, slug: e.target.value })}
+              className={fieldClass}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelClass}>Description (optional)</label>
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className={fieldClass}
+            />
+          </div>
+          <div>
+            <button
+              type="submit"
+              className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              <Icon path={ICON_PATHS.plus} className="h-4 w-4" />
+              Add category
+            </button>
+          </div>
+        </form>
+      </div>
 
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
@@ -141,13 +159,18 @@ export function AdminCategoriesPage() {
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {categories.map((c) => (
-              <tr key={c.id}>
+              <tr key={c.id} className="hover:bg-neutral-50/60">
                 <td className="px-4 py-3 font-medium text-neutral-900">{c.name}</td>
                 <td className="px-4 py-3 text-neutral-500">{c.slug}</td>
                 <td className="px-4 py-3 max-w-xs truncate text-neutral-500" title={c.description ?? ""}>
                   {c.description || <span className="text-neutral-300">—</span>}
                 </td>
-                <td className="px-4 py-3 text-neutral-500">{c._count.products}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+                    <Icon path={ICON_PATHS.products} className="h-3.5 w-3.5" />
+                    {c._count.products}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   <button
                     onClick={() => setPendingToggle(c)}
@@ -163,11 +186,9 @@ export function AdminCategoriesPage() {
                     onClick={() => startEdit(c)}
                     title="Edit"
                     aria-label="Edit"
-                    className="mr-3 inline-flex rounded p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                    className="mr-3 inline-flex rounded p-1.5 text-neutral-500 hover:bg-indigo-50 hover:text-indigo-700"
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                      <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
-                    </svg>
+                    <Icon path={ICON_PATHS.edit} className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(c.id)}
@@ -180,13 +201,7 @@ export function AdminCategoriesPage() {
                     aria-label="Delete"
                     className="inline-flex rounded p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:text-neutral-300 disabled:hover:bg-transparent"
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                      <path
-                        fillRule="evenodd"
-                        d="M8.75 1a.75.75 0 0 0-.75.75V2h-3.25a.75.75 0 0 0 0 1.5h.324l.667 11.35A2.25 2.25 0 0 0 7.986 17h4.028a2.25 2.25 0 0 0 2.245-2.15l.667-11.35h.324a.75.75 0 0 0 0-1.5H12v-.25a.75.75 0 0 0-.75-.75h-2.5ZM8.5 6.25a.75.75 0 0 1 1.5 0v7a.75.75 0 0 1-1.5 0v-7Zm3.5 0a.75.75 0 0 0-1.5 0v7a.75.75 0 0 0 1.5 0v-7Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    <Icon path={ICON_PATHS.trash} className="h-4 w-4" />
                   </button>
                 </td>
               </tr>
@@ -199,51 +214,58 @@ export function AdminCategoriesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-neutral-900">Edit category</h2>
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                  <Icon path={ICON_PATHS.edit} className="h-4 w-4" />
+                </span>
+                <h2 className="text-lg font-semibold text-neutral-900">Edit category</h2>
+              </div>
               <button
                 type="button"
                 onClick={() => setEditingId(null)}
                 aria-label="Close"
-                className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+                className="rounded p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
               >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
+                <Icon path={ICON_PATHS.close} className="h-5 w-5" />
               </button>
             </div>
             <form onSubmit={handleEditSubmit} className="mt-4 grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700">Name</label>
+                <label className={labelClass}>Name</label>
                 <input
                   required
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                  className={fieldClass}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700">Slug</label>
+                <label className={labelClass}>Slug</label>
                 <input
                   required
                   value={editForm.slug}
                   onChange={(e) => setEditForm({ ...editForm, slug: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                  className={fieldClass}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700">Description (optional)</label>
+                <label className={labelClass}>Description (optional)</label>
                 <textarea
                   rows={3}
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                  className={fieldClass}
                 />
               </div>
 
               {editError && <p className="text-sm text-red-600">{editError}</p>}
 
               <div className="flex gap-3">
-                <button type="submit" className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800">
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                >
+                  <Icon path={ICON_PATHS.check} className="h-4 w-4" />
                   Save changes
                 </button>
                 <button

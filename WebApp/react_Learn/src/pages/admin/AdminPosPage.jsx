@@ -7,6 +7,8 @@ import { useCreatePosSaleMutation } from "../../store/api/ordersApi.js";
 import { resolveImageUrl } from "../../utils/images.js";
 import { PhoneInput } from "../../components/PhoneInput.jsx";
 import { paymentMethodLabel } from "../../utils/paymentMethods.js";
+import { Icon, SectionHeading } from "../../components/Icon.jsx";
+import { ICON_PATHS } from "../../utils/iconPaths.js";
 
 const BarcodeScannerModal = lazy(() =>
   import("../../components/BarcodeScannerModal.jsx").then((m) => ({ default: m.BarcodeScannerModal })),
@@ -15,10 +17,10 @@ const BarcodeScannerModal = lazy(() =>
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 const PAYMENT_METHODS = [
-  { value: "CASH", label: "Cash" },
-  { value: "UPI", label: "UPI" },
-  { value: "UPI_PERSONAL", label: "UPI (Personal)" },
-  { value: "CARD", label: "Card" },
+  { value: "CASH", label: "Cash", icon: ICON_PATHS.cash },
+  { value: "UPI", label: "UPI", icon: ICON_PATHS.qr },
+  { value: "UPI_PERSONAL", label: "UPI (Personal)", icon: ICON_PATHS.qr },
+  { value: "CARD", label: "Card", icon: ICON_PATHS.card },
 ];
 
 const EMPTY_PRODUCTS = [];
@@ -205,13 +207,7 @@ export function AdminPosPage() {
     return (
       <div className="mx-auto max-w-lg py-16 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-green-600" aria-hidden="true">
-            <path
-              fillRule="evenodd"
-              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <Icon path={ICON_PATHS.check} className="h-8 w-8 text-green-600" />
         </div>
         <h1 className="mt-6 text-2xl font-semibold text-neutral-900">Sale complete!</h1>
         <p className="mt-2 text-sm text-neutral-500">
@@ -229,7 +225,7 @@ export function AdminPosPage() {
           </Link>
           <button
             onClick={resetSale}
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
           >
             New sale
           </button>
@@ -240,32 +236,47 @@ export function AdminPosPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-neutral-900">Point of sale</h1>
-      <p className="mt-1 text-sm text-neutral-500">Record an in-store sale — stock updates immediately.</p>
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white">
+          <Icon path={ICON_PATHS.cart} className="h-5 w-5" />
+        </span>
+        <div>
+          <h1 className="text-xl font-semibold text-neutral-900">Point of sale</h1>
+          <p className="text-sm text-neutral-500">Record an in-store sale — stock updates immediately.</p>
+        </div>
+      </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <section className="rounded-lg border border-neutral-200 bg-white p-6">
-            <h2 className="text-base font-semibold text-neutral-900">Add products</h2>
+            <SectionHeading icon={ICON_PATHS.search}>Add products</SectionHeading>
             <div className="mt-3 flex gap-2">
-              <input
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-                placeholder="Search by product name or barcode..."
-                className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-              />
+              <div className="relative w-full">
+                <Icon
+                  path={ICON_PATHS.search}
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+                />
+                <input
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder="Search by product name or barcode..."
+                  className="w-full rounded-md border border-neutral-300 py-2 pl-9 pr-3 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => setShowScanner(true)}
-                className="shrink-0 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                className="flex shrink-0 items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
               >
+                <Icon path={ICON_PATHS.camera} className="h-4 w-4" />
                 Scan
               </button>
               <button
                 type="button"
                 onClick={() => setShowPicker(true)}
-                className="shrink-0 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                className="flex shrink-0 items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
               >
+                <Icon path={ICON_PATHS.grid} className="h-4 w-4" />
                 Select item
               </button>
             </div>
@@ -278,7 +289,7 @@ export function AdminPosPage() {
                     key={product.id}
                     type="button"
                     onClick={() => addToCart(product)}
-                    className="flex w-full items-center gap-3 p-3 text-left hover:bg-neutral-50"
+                    className="flex w-full items-center gap-3 p-3 text-left hover:bg-indigo-50/60"
                   >
                     <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-neutral-100">
                       <img src={resolveImageUrl(product.images?.[0])} alt="" className="h-full w-full object-cover" />
@@ -297,17 +308,23 @@ export function AdminPosPage() {
 
           <section className="rounded-lg border border-neutral-200 bg-white p-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-neutral-900">Cart ({totalItems})</h2>
+              <SectionHeading icon={ICON_PATHS.cart}>Cart ({totalItems})</SectionHeading>
               <button
                 type="button"
                 onClick={addCharge}
-                className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
+                className="flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800"
               >
-                + Add charge
+                <Icon path={ICON_PATHS.plusCircle} className="h-4 w-4" />
+                Add charge
               </button>
             </div>
             {cart.length === 0 && charges.length === 0 ? (
-              <p className="mt-3 text-sm text-neutral-500">No items added yet.</p>
+              <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+                  <Icon path={ICON_PATHS.bag} className="h-6 w-6" />
+                </span>
+                <p className="text-sm text-neutral-500">No items added yet.</p>
+              </div>
             ) : (
               <ul className="mt-3 divide-y divide-neutral-100">
                 {cart.map(({ product, quantity }) => (
@@ -323,7 +340,7 @@ export function AdminPosPage() {
                       <button
                         type="button"
                         onClick={() => updateQuantity(product.id, quantity - 1)}
-                        className="px-3 py-1.5 text-neutral-600 hover:text-neutral-900"
+                        className="px-3 py-1.5 text-neutral-600 hover:bg-indigo-50 hover:text-indigo-700"
                       >
                         -
                       </button>
@@ -332,7 +349,7 @@ export function AdminPosPage() {
                         type="button"
                         onClick={() => updateQuantity(product.id, quantity + 1)}
                         disabled={quantity >= product.stock}
-                        className="px-3 py-1.5 text-neutral-600 hover:text-neutral-900 disabled:cursor-not-allowed disabled:text-neutral-300"
+                        className="px-3 py-1.5 text-neutral-600 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:text-neutral-300 disabled:hover:bg-transparent"
                       >
                         +
                       </button>
@@ -346,19 +363,13 @@ export function AdminPosPage() {
                       className="rounded-md p-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-600"
                       aria-label={`Remove ${product.name}`}
                     >
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                        <path
-                          fillRule="evenodd"
-                          d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                      <Icon path={ICON_PATHS.trash} className="h-4 w-4" />
                     </button>
                   </li>
                 ))}
                 {charges.map((charge) => (
                   <li key={charge.id} className="flex flex-wrap items-center gap-2 py-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-neutral-100 text-sm font-semibold text-neutral-400">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-emerald-50 text-sm font-semibold text-emerald-600">
                       ₹
                     </div>
                     <input
@@ -397,13 +408,7 @@ export function AdminPosPage() {
                       className="rounded-md p-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-600"
                       aria-label={`Remove ${charge.name || "charge"}`}
                     >
-                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                        <path
-                          fillRule="evenodd"
-                          d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                      <Icon path={ICON_PATHS.trash} className="h-4 w-4" />
                     </button>
                   </li>
                 ))}
@@ -415,24 +420,26 @@ export function AdminPosPage() {
         <div className="space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto lg:pr-1">
           <section className="rounded-lg border border-neutral-200 bg-white p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-neutral-900">Customer</h2>
+              <SectionHeading icon={ICON_PATHS.user}>Customer</SectionHeading>
               <div className="flex gap-1 rounded-md bg-neutral-100 p-0.5 text-xs font-medium">
                 <button
                   type="button"
                   onClick={() => setCustomerMode("guest")}
-                  className={`rounded px-2.5 py-1 ${
-                    customerMode === "guest" ? "bg-neutral-900 text-white" : "text-neutral-600"
+                  className={`flex items-center gap-1 rounded px-2.5 py-1 ${
+                    customerMode === "guest" ? "bg-indigo-600 text-white" : "text-neutral-600"
                   }`}
                 >
+                  <Icon path={ICON_PATHS.user} className="h-3.5 w-3.5" />
                   Walk-in
                 </button>
                 <button
                   type="button"
                   onClick={() => setCustomerMode("existing")}
-                  className={`rounded px-2.5 py-1 ${
-                    customerMode === "existing" ? "bg-neutral-900 text-white" : "text-neutral-600"
+                  className={`flex items-center gap-1 rounded px-2.5 py-1 ${
+                    customerMode === "existing" ? "bg-indigo-600 text-white" : "text-neutral-600"
                   }`}
                 >
+                  <Icon path={ICON_PATHS.idCard} className="h-3.5 w-3.5" />
                   Existing
                 </button>
               </div>
@@ -444,14 +451,14 @@ export function AdminPosPage() {
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
                   placeholder="Name (optional)"
-                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                 />
                 <PhoneInput value={guestPhone} onChange={setGuestPhone} />
               </div>
             ) : (
               <div className="mt-3">
                 {selectedCustomer ? (
-                  <div className="flex items-center justify-between rounded-md border border-neutral-200 p-2 text-sm">
+                  <div className="flex items-center justify-between rounded-md border border-indigo-200 bg-indigo-50/50 p-2 text-sm">
                     <div>
                       <p className="font-medium text-neutral-900">
                         {[selectedCustomer.firstName, selectedCustomer.lastName].filter(Boolean).join(" ") ||
@@ -473,7 +480,7 @@ export function AdminPosPage() {
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="Search by name, email, or phone..."
-                      className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+                      className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                     />
                     {matchingCustomers.length > 0 && (
                       <div className="mt-2 max-h-40 divide-y divide-neutral-100 overflow-y-auto rounded-md border border-neutral-200">
@@ -482,7 +489,7 @@ export function AdminPosPage() {
                             key={customer.id}
                             type="button"
                             onClick={() => selectCustomer(customer)}
-                            className="block w-full p-2 text-left text-sm hover:bg-neutral-50"
+                            className="block w-full p-2 text-left text-sm hover:bg-indigo-50/60"
                           >
                             <p className="font-medium text-neutral-900">
                               {[customer.firstName, customer.lastName].filter(Boolean).join(" ") || customer.email}
@@ -499,19 +506,20 @@ export function AdminPosPage() {
           </section>
 
           <section className="rounded-lg border border-neutral-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-neutral-900">Payment method</h2>
+            <SectionHeading icon={ICON_PATHS.card}>Payment method</SectionHeading>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {PAYMENT_METHODS.map((method) => (
                 <button
                   key={method.value}
                   type="button"
                   onClick={() => setPaymentMethod(method.value)}
-                  className={`rounded-md border px-3 py-2 text-sm font-medium ${
+                  className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium ${
                     paymentMethod === method.value
-                      ? "border-neutral-900 bg-neutral-900 text-white"
-                      : "border-neutral-200 text-neutral-600 hover:border-neutral-400"
+                      ? "border-indigo-600 bg-indigo-600 text-white"
+                      : "border-neutral-200 text-neutral-600 hover:border-indigo-300 hover:bg-indigo-50"
                   }`}
                 >
+                  <Icon path={method.icon} className="h-4 w-4" />
                   {method.label}
                 </button>
               ))}
@@ -524,18 +532,20 @@ export function AdminPosPage() {
                 <button
                   type="button"
                   onClick={() => setShowDiscount(true)}
-                  className="rounded-md border border-dashed border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
+                  className="flex items-center gap-1.5 rounded-md border border-dashed border-amber-300 bg-amber-50/60 px-3 py-1.5 text-sm font-medium text-amber-700 hover:border-amber-400 hover:bg-amber-50"
                 >
-                  + Add discount
+                  <Icon path={ICON_PATHS.tag} className="h-4 w-4" />
+                  Add discount
                 </button>
               )}
               {!showRoundOff && (
                 <button
                   type="button"
                   onClick={() => setShowRoundOff(true)}
-                  className="rounded-md border border-dashed border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:text-neutral-900"
+                  className="flex items-center gap-1.5 rounded-md border border-dashed border-sky-300 bg-sky-50/60 px-3 py-1.5 text-sm font-medium text-sky-700 hover:border-sky-400 hover:bg-sky-50"
                 >
-                  + Add round off
+                  <Icon path={ICON_PATHS.scale} className="h-4 w-4" />
+                  Add round off
                 </button>
               )}
             </div>
@@ -544,14 +554,16 @@ export function AdminPosPage() {
           {showDiscount && (
             <section className="rounded-lg border border-neutral-200 bg-white p-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-neutral-900">Discount</h2>
+                <SectionHeading icon={ICON_PATHS.tag} iconClassName="bg-amber-50 text-amber-600">
+                  Discount
+                </SectionHeading>
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1 rounded-md bg-neutral-100 p-0.5 text-xs font-medium">
                     <button
                       type="button"
                       onClick={() => setDiscountType("FIXED")}
                       className={`rounded px-2 py-0.5 ${
-                        discountType === "FIXED" ? "bg-neutral-900 text-white" : "text-neutral-600"
+                        discountType === "FIXED" ? "bg-indigo-600 text-white" : "text-neutral-600"
                       }`}
                     >
                       ₹
@@ -560,7 +572,7 @@ export function AdminPosPage() {
                       type="button"
                       onClick={() => setDiscountType("PERCENTAGE")}
                       className={`rounded px-2 py-0.5 ${
-                        discountType === "PERCENTAGE" ? "bg-neutral-900 text-white" : "text-neutral-600"
+                        discountType === "PERCENTAGE" ? "bg-indigo-600 text-white" : "text-neutral-600"
                       }`}
                     >
                       %
@@ -595,14 +607,16 @@ export function AdminPosPage() {
           {showRoundOff && (
             <section className="rounded-lg border border-neutral-200 bg-white p-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-neutral-900">Round off</h2>
+                <SectionHeading icon={ICON_PATHS.scale} iconClassName="bg-sky-50 text-sky-600">
+                  Round off
+                </SectionHeading>
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1 rounded-md bg-neutral-100 p-0.5 text-xs font-medium">
                     <button
                       type="button"
                       onClick={() => setRoundOffDirection("ADD")}
                       className={`rounded px-2 py-0.5 ${
-                        roundOffDirection === "ADD" ? "bg-neutral-900 text-white" : "text-neutral-600"
+                        roundOffDirection === "ADD" ? "bg-indigo-600 text-white" : "text-neutral-600"
                       }`}
                     >
                       Add
@@ -611,7 +625,7 @@ export function AdminPosPage() {
                       type="button"
                       onClick={() => setRoundOffDirection("SUBTRACT")}
                       className={`rounded px-2 py-0.5 ${
-                        roundOffDirection === "SUBTRACT" ? "bg-neutral-900 text-white" : "text-neutral-600"
+                        roundOffDirection === "SUBTRACT" ? "bg-indigo-600 text-white" : "text-neutral-600"
                       }`}
                     >
                       Subtract
@@ -643,7 +657,8 @@ export function AdminPosPage() {
           )}
 
           <section className="rounded-lg border border-neutral-200 bg-white p-4">
-            <div className="space-y-1 text-sm">
+            <SectionHeading icon={ICON_PATHS.receipt}>Order summary</SectionHeading>
+            <div className="mt-3 space-y-1 text-sm">
               <div className="flex justify-between text-neutral-500">
                 <span>Items subtotal</span>
                 <span>{currency.format(productsSubtotal)}</span>
@@ -678,8 +693,9 @@ export function AdminPosPage() {
             <button
               onClick={handleCompleteSale}
               disabled={submitting || cart.length === 0}
-              className="mt-4 w-full rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-800 disabled:cursor-not-allowed disabled:bg-neutral-300"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
             >
+              {!submitting && <Icon path={ICON_PATHS.check} className="h-4 w-4" />}
               {submitting ? "Completing sale..." : "Complete sale"}
             </button>
           </section>
@@ -696,7 +712,7 @@ export function AdminPosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="flex max-h-[85vh] w-full max-w-3xl flex-col rounded-lg bg-white p-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-neutral-900">Select products</h2>
+              <SectionHeading icon={ICON_PATHS.grid}>Select products</SectionHeading>
               <button
                 type="button"
                 onClick={() => setShowPicker(false)}
@@ -706,12 +722,18 @@ export function AdminPosPage() {
               </button>
             </div>
 
-            <input
-              value={pickerSearch}
-              onChange={(e) => setPickerSearch(e.target.value)}
-              placeholder="Search products..."
-              className="mt-4 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
+            <div className="relative mt-4">
+              <Icon
+                path={ICON_PATHS.search}
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+              />
+              <input
+                value={pickerSearch}
+                onChange={(e) => setPickerSearch(e.target.value)}
+                placeholder="Search products..."
+                className="w-full rounded-md border border-neutral-300 py-2 pl-9 pr-3 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+              />
+            </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
               <button
@@ -719,8 +741,8 @@ export function AdminPosPage() {
                 onClick={() => setPickerCategory("")}
                 className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
                   !pickerCategory
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-200 text-neutral-600 hover:border-neutral-400"
+                    ? "border-indigo-600 bg-indigo-600 text-white"
+                    : "border-neutral-200 text-neutral-600 hover:border-indigo-300 hover:bg-indigo-50"
                 }`}
               >
                 All
@@ -732,8 +754,8 @@ export function AdminPosPage() {
                   onClick={() => setPickerCategory(c.id)}
                   className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
                     pickerCategory === c.id
-                      ? "border-neutral-900 bg-neutral-900 text-white"
-                      : "border-neutral-200 text-neutral-600 hover:border-neutral-400"
+                      ? "border-indigo-600 bg-indigo-600 text-white"
+                      : "border-neutral-200 text-neutral-600 hover:border-indigo-300 hover:bg-indigo-50"
                   }`}
                 >
                   {c.name}
@@ -754,7 +776,7 @@ export function AdminPosPage() {
                         type="button"
                         onClick={() => addToCart(product)}
                         disabled={product.stock === 0}
-                        className="relative rounded-md border border-neutral-200 p-2 text-left hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="relative rounded-md border border-neutral-200 p-2 text-left hover:border-indigo-300 hover:bg-indigo-50/40 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <div className="aspect-square overflow-hidden rounded bg-neutral-100">
                           <img
@@ -768,7 +790,7 @@ export function AdminPosPage() {
                           {currency.format(product.price)} · {product.stock === 0 ? "Out of stock" : `${product.stock} left`}
                         </p>
                         {inCart && (
-                          <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-semibold text-white">
+                          <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-semibold text-white">
                             {inCart.quantity}
                           </span>
                         )}

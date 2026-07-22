@@ -11,6 +11,8 @@ import { useAdminListCategoriesQuery } from "../../store/api/categoriesApi.js";
 import { resolveImageUrl } from "../../utils/images.js";
 import { ConfirmModal } from "../../components/ConfirmModal.jsx";
 import { StockAdjustModal } from "../../components/StockAdjustModal.jsx";
+import { Icon, SectionHeading } from "../../components/Icon.jsx";
+import { ICON_PATHS } from "../../utils/iconPaths.js";
 
 const BarcodeScannerModal = lazy(() =>
   import("../../components/BarcodeScannerModal.jsx").then((m) => ({ default: m.BarcodeScannerModal })),
@@ -22,9 +24,9 @@ function SortableHeader({ label, sortKeyName, activeSortKey, sortDirection, onSo
   const isActive = activeSortKey === sortKeyName;
   return (
     <th className="px-4 py-3 font-medium">
-      <button onClick={() => onSort(sortKeyName)} className="inline-flex items-center gap-1 hover:text-neutral-900">
+      <button onClick={() => onSort(sortKeyName)} className="inline-flex items-center gap-1 hover:text-indigo-700">
         {label}
-        <span className={`w-3 shrink-0 text-center text-[10px] ${isActive ? "" : "invisible"}`}>
+        <span className={`w-3 shrink-0 text-center text-[10px] ${isActive ? "text-indigo-600" : "invisible"}`}>
           {sortDirection === "asc" ? "▲" : "▼"}
         </span>
       </button>
@@ -46,6 +48,10 @@ const emptyForm = {
   gstInclusive: true,
   isFeatured: false,
 };
+
+const fieldClass =
+  "mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400";
+const labelClass = "block text-sm font-medium text-neutral-700";
 
 export function AdminProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -228,21 +234,27 @@ export function AdminProductsPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-neutral-900">Products</h1>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white">
+            <Icon path={ICON_PATHS.products} className="h-5 w-5" />
+          </span>
+          <h1 className="text-xl font-semibold text-neutral-900">Products</h1>
+        </div>
         <button
           onClick={startCreate}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800"
+          className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
+          <Icon path={ICON_PATHS.plus} className="h-4 w-4" />
           Add product
         </button>
       </div>
 
       <div className="mt-6">
-        <label className="block text-sm font-medium text-neutral-700">Filter by category</label>
+        <label className={labelClass}>Filter by category</label>
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="mt-1 w-full max-w-xs rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          className={`${fieldClass} max-w-xs`}
         >
           <option value="">All</option>
           {categories.map((c) => (
@@ -258,221 +270,274 @@ export function AdminProductsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
           <div className="max-h-full w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-neutral-900">
-                {editingId ? "Edit product" : "Add product"}
-              </h2>
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+                  <Icon path={editingId ? ICON_PATHS.edit : ICON_PATHS.plus} className="h-4 w-4" />
+                </span>
+                <h2 className="text-lg font-semibold text-neutral-900">
+                  {editingId ? "Edit product" : "Add product"}
+                </h2>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
                 aria-label="Close"
-                className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+                className="rounded p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
               >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
+                <Icon path={ICON_PATHS.close} className="h-5 w-5" />
               </button>
             </div>
-          <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">Name</label>
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">Slug</label>
-            <input
-              required
-              value={form.slug}
-              onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-neutral-700">Description</label>
-            <textarea
-              required
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">Sale price</label>
-            <input
-              type="number"
-              required
-              value={form.price}
-              onChange={(e) => setForm({ ...form, price: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">
-              Purchase price <span className="text-neutral-400">(admin only)</span>
-            </label>
-            <input
-              type="number"
-              value={form.purchasePrice}
-              onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">Compare-at price</label>
-            <input
-              type="number"
-              value={form.compareAtPrice}
-              onChange={(e) => setForm({ ...form, compareAtPrice: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">Stock</label>
-            <input
-              type="number"
-              required
-              value={form.stock}
-              onChange={(e) => setForm({ ...form, stock: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">Category *</label>
-            <select
-              required
-              value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            >
-              <option value="" disabled>
-                Select category
-              </option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                  {!c.isActive ? " (unpublished)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-neutral-700">Barcode (optional)</label>
-            <div className="mt-1 flex gap-2">
-              <input
-                value={form.barcode}
-                onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                placeholder="Enter or scan a barcode"
-                className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowScanner(true)}
-                className="shrink-0 rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
-              >
-                Scan
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">GST rate (%)</label>
-            <input
-              type="number"
-              min="0"
-              max="50"
-              step="1"
-              required
-              value={form.gstRate}
-              onChange={(e) => setForm({ ...form, gstRate: e.target.value.replace(/[^0-9].*$/, "") })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700">Price and GST</label>
-            <select
-              value={form.gstInclusive ? "inclusive" : "exclusive"}
-              onChange={(e) => setForm({ ...form, gstInclusive: e.target.value === "inclusive" })}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-            >
-              <option value="inclusive">GST included in price</option>
-              <option value="exclusive">GST excluded from price</option>
-            </select>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-neutral-700">
-              Product images ({existingImages.length + newImageFiles.length}/{MAX_PRODUCT_IMAGES})
-            </label>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              multiple
-              onChange={handleImagesSelected}
-              disabled={existingImages.length + newImageFiles.length >= MAX_PRODUCT_IMAGES}
-              className="mt-1 w-full text-sm text-neutral-600"
-            />
-            {(existingImages.length > 0 || newImagePreviews.length > 0) && (
-              <div className="mt-3 flex flex-wrap gap-3">
-                {existingImages.map((url, index) => (
-                  <div key={url} className="relative h-20 w-20 overflow-hidden rounded-md border border-neutral-200">
-                    <img src={resolveImageUrl(url)} alt="" className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeExistingImage(index)}
-                      className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-bl bg-black/60 text-xs leading-none text-white"
-                    >
-                      ×
-                    </button>
+            <form onSubmit={handleSubmit} className="mt-5 space-y-6">
+              <section className="rounded-lg border border-neutral-200 p-4">
+                <SectionHeading icon={ICON_PATHS.tag}>Basic info</SectionHeading>
+                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>Name</label>
+                    <input
+                      required
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className={fieldClass}
+                    />
                   </div>
-                ))}
-                {newImagePreviews.map((url, index) => (
-                  <div key={url} className="relative h-20 w-20 overflow-hidden rounded-md border border-neutral-200">
-                    <img src={url} alt="" className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removeNewImage(index)}
-                      className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-bl bg-black/60 text-xs leading-none text-white"
-                    >
-                      ×
-                    </button>
+                  <div>
+                    <label className={labelClass}>Slug</label>
+                    <input
+                      required
+                      value={form.slug}
+                      onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                      className={fieldClass}
+                    />
                   </div>
-                ))}
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Description</label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={form.description}
+                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                      className={fieldClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Category *</label>
+                    <select
+                      required
+                      value={form.categoryId}
+                      onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                      className={fieldClass}
+                    >
+                      <option value="" disabled>
+                        Select category
+                      </option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                          {!c.isActive ? " (unpublished)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Barcode (optional)</label>
+                    <div className="mt-1 flex gap-2">
+                      <input
+                        value={form.barcode}
+                        onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                        placeholder="Enter or scan a barcode"
+                        className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowScanner(true)}
+                        className="flex shrink-0 items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100"
+                      >
+                        <Icon path={ICON_PATHS.camera} className="h-4 w-4" />
+                        Scan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-lg border border-neutral-200 p-4">
+                <SectionHeading icon={ICON_PATHS.cash} iconClassName="bg-emerald-50 text-emerald-600">
+                  Pricing &amp; stock
+                </SectionHeading>
+                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>Sale price</label>
+                    <input
+                      type="number"
+                      required
+                      value={form.price}
+                      onChange={(e) => setForm({ ...form, price: e.target.value })}
+                      className={fieldClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      Purchase price <span className="text-neutral-400">(admin only)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={form.purchasePrice}
+                      onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })}
+                      className={fieldClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Compare-at price</label>
+                    <input
+                      type="number"
+                      value={form.compareAtPrice}
+                      onChange={(e) => setForm({ ...form, compareAtPrice: e.target.value })}
+                      className={fieldClass}
+                    />
+                    <p className="mt-1 text-xs text-neutral-400">
+                      Set higher than the sale price to show a "Sale" badge on the storefront.
+                    </p>
+                    {Number(form.compareAtPrice) > Number(form.price) && form.price !== "" ? (
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-600">
+                        <Icon path={ICON_PATHS.tag} className="h-3.5 w-3.5" />
+                        On sale — customers will see a "Sale" badge
+                      </span>
+                    ) : (
+                      form.compareAtPrice !== "" && (
+                        <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-500">
+                          Not on sale — compare-at price must be higher than the sale price
+                        </span>
+                      )
+                    )}
+                  </div>
+                  <div>
+                    <label className={labelClass}>Stock</label>
+                    <input
+                      type="number"
+                      required
+                      value={form.stock}
+                      onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                      className={fieldClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>GST rate (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      step="1"
+                      required
+                      value={form.gstRate}
+                      onChange={(e) => setForm({ ...form, gstRate: e.target.value.replace(/[^0-9].*$/, "") })}
+                      className={fieldClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Price and GST</label>
+                    <select
+                      value={form.gstInclusive ? "inclusive" : "exclusive"}
+                      onChange={(e) => setForm({ ...form, gstInclusive: e.target.value === "inclusive" })}
+                      className={fieldClass}
+                    >
+                      <option value="inclusive">GST included in price</option>
+                      <option value="exclusive">GST excluded from price</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-lg border border-neutral-200 p-4">
+                <SectionHeading icon={ICON_PATHS.photo} iconClassName="bg-sky-50 text-sky-600">
+                  Images ({existingImages.length + newImageFiles.length}/{MAX_PRODUCT_IMAGES})
+                </SectionHeading>
+                <label
+                  htmlFor="product-images"
+                  className={`mt-3 flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-6 text-center ${
+                    existingImages.length + newImageFiles.length >= MAX_PRODUCT_IMAGES
+                      ? "cursor-not-allowed border-neutral-200 text-neutral-300"
+                      : "border-sky-200 bg-sky-50/40 text-sky-600 hover:bg-sky-50"
+                  }`}
+                >
+                  <Icon path={ICON_PATHS.upload} className="h-6 w-6" />
+                  <span className="text-sm font-medium">Click to upload images</span>
+                  <span className="text-xs text-neutral-400">JPEG, PNG, WEBP or GIF</span>
+                </label>
+                <input
+                  id="product-images"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  onChange={handleImagesSelected}
+                  disabled={existingImages.length + newImageFiles.length >= MAX_PRODUCT_IMAGES}
+                  className="hidden"
+                />
+                {(existingImages.length > 0 || newImagePreviews.length > 0) && (
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {existingImages.map((url, index) => (
+                      <div key={url} className="relative h-20 w-20 overflow-hidden rounded-md border border-neutral-200">
+                        <img src={resolveImageUrl(url)} alt="" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(index)}
+                          className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-bl bg-black/60 text-xs leading-none text-white hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    {newImagePreviews.map((url, index) => (
+                      <div key={url} className="relative h-20 w-20 overflow-hidden rounded-md border border-neutral-200">
+                        <img src={url} alt="" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeNewImage(index)}
+                          className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-bl bg-black/60 text-xs leading-none text-white hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <label className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={form.isFeatured}
+                  onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
+                />
+                <Icon path={ICON_PATHS.star} className="h-4 w-4 text-amber-500" />
+                Featured product
+              </label>
+
+              {!editingId && (
+                <div className="flex items-start gap-2 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                  <Icon path={ICON_PATHS.info} className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>New products are created unpublished. Use the status toggle in the table to publish once you're ready.</p>
+                </div>
+              )}
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                >
+                  <Icon path={ICON_PATHS.check} className="h-4 w-4" />
+                  {editingId ? "Save changes" : "Create product"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
               </div>
-            )}
-          </div>
-          <label className="flex items-center gap-2 text-sm text-neutral-700">
-            <input
-              type="checkbox"
-              checked={form.isFeatured}
-              onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
-            />
-            Featured product
-          </label>
-
-          {!editingId && (
-            <p className="text-sm text-neutral-500 sm:col-span-2">
-              New products are created unpublished. Use the status toggle in the table to publish once you're ready.
-            </p>
-          )}
-
-          {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
-
-          <div className="flex gap-3 sm:col-span-2">
-            <button type="submit" className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800">
-              {editingId ? "Save changes" : "Create product"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
-            >
-              Cancel
-            </button>
-          </div>
-          </form>
+            </form>
           </div>
         </div>
       )}
@@ -521,23 +586,30 @@ export function AdminProductsPage() {
           </thead>
           <tbody className="divide-y divide-neutral-100">
             {sortedProducts.map((p) => (
-              <tr key={p.id}>
+              <tr key={p.id} className="hover:bg-neutral-50/60">
                 <td className="px-4 py-3 font-medium text-neutral-900">
-                  <Link to={`/admin/products/${p.id}`} className="hover:underline">
+                  <Link to={`/admin/products/${p.id}`} className="hover:text-indigo-700 hover:underline">
                     {p.name}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-neutral-500">{p.category?.name}</td>
-                <td className="px-4 py-3 text-neutral-500">₹{p.price}</td>
+                <td className="px-4 py-3 text-neutral-500">
+                  <span className="flex items-center gap-1.5">
+                    ₹{p.price}
+                    {p.compareAtPrice && Number(p.compareAtPrice) > Number(p.price) && (
+                      <>
+                        <span className="text-xs text-neutral-400 line-through">₹{p.compareAtPrice}</span>
+                        <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600">
+                          SALE
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   {p.stock === 0 ? (
                     <span className="inline-flex items-center gap-1 font-medium text-red-600">
-                      <svg
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className="h-4 w-4 shrink-0"
-                        aria-hidden="true"
-                      >
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0" aria-hidden="true">
                         <path
                           fillRule="evenodd"
                           d="M9.401 3.003c.765-1.336 2.833-1.336 3.598 0l6.518 11.4c.75 1.313-.213 2.947-1.798 2.947H4.681c-1.585 0-2.548-1.634-1.798-2.947l6.518-11.4ZM10 7a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-1.5 0v-3A.75.75 0 0 1 10 7Zm0 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"
@@ -568,22 +640,18 @@ export function AdminProductsPage() {
                     onClick={() => setPendingStockProduct(p)}
                     title="Update stock"
                     aria-label="Update stock"
-                    className="mr-3 inline-flex rounded p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                    className="mr-3 inline-flex rounded p-1.5 text-neutral-500 hover:bg-emerald-50 hover:text-emerald-600"
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                      <path d="M10 2a.75.75 0 0 1 .75.75v6.5h6.5a.75.75 0 0 1 0 1.5h-6.5v6.5a.75.75 0 0 1-1.5 0v-6.5h-6.5a.75.75 0 0 1 0-1.5h6.5v-6.5A.75.75 0 0 1 10 2Z" />
-                    </svg>
+                    <Icon path={ICON_PATHS.plusCircle} className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => startEdit(p)}
                     disabled={p.isActive}
                     title={p.isActive ? "Unpublish this product first to edit it" : "Edit"}
                     aria-label="Edit"
-                    className="mr-3 inline-flex rounded p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 disabled:cursor-not-allowed disabled:text-neutral-300 disabled:hover:bg-transparent"
+                    className="mr-3 inline-flex rounded p-1.5 text-neutral-500 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:text-neutral-300 disabled:hover:bg-transparent"
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                      <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-.793.793-2.828-2.828.793-.793ZM11.379 5.793 3 14.172V17h2.828l8.38-8.379-2.83-2.828Z" />
-                    </svg>
+                    <Icon path={ICON_PATHS.edit} className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(p.id)}
@@ -591,13 +659,7 @@ export function AdminProductsPage() {
                     aria-label="Delete"
                     className="inline-flex rounded p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700"
                   >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                      <path
-                        fillRule="evenodd"
-                        d="M8.75 1a.75.75 0 0 0-.75.75V2h-3.25a.75.75 0 0 0 0 1.5h.324l.667 11.35A2.25 2.25 0 0 0 7.986 17h4.028a2.25 2.25 0 0 0 2.245-2.15l.667-11.35h.324a.75.75 0 0 0 0-1.5H12v-.25a.75.75 0 0 0-.75-.75h-2.5ZM8.5 6.25a.75.75 0 0 1 1.5 0v7a.75.75 0 0 1-1.5 0v-7Zm3.5 0a.75.75 0 0 0-1.5 0v7a.75.75 0 0 0 1.5 0v-7Z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    <Icon path={ICON_PATHS.trash} className="h-4 w-4" />
                   </button>
                 </td>
               </tr>

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Icon } from "./Icon.jsx";
+import { ICON_PATHS } from "../utils/iconPaths.js";
 
 // Parent must render this with `key={product.id}` so switching products remounts
 // the form with fresh state, instead of syncing state to prop changes via an effect.
@@ -14,6 +16,7 @@ export function StockAdjustModal({ product, onSubmit, onCancel }) {
   const hasValidQuantity = quantity !== "" && Number.isInteger(parsedQuantity) && parsedQuantity > 0;
   const delta = mode === "add" ? parsedQuantity : -parsedQuantity;
   const resultingStock = hasValidQuantity ? product.stock + delta : product.stock;
+  const isAdd = mode === "add";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -41,27 +44,36 @@ export function StockAdjustModal({ product, onSubmit, onCancel }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="text-base font-semibold text-neutral-900">Update stock</h2>
-        <p className="mt-1 text-sm text-neutral-500">{product.name}</p>
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+            <Icon path={ICON_PATHS.bag} className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">Update stock</h2>
+            <p className="text-sm text-neutral-500">{product.name}</p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setMode("add")}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium ${
-                mode === "add" ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-600"
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${
+                mode === "add" ? "bg-emerald-600 text-white" : "bg-neutral-100 text-neutral-600 hover:bg-emerald-50"
               }`}
             >
+              <Icon path={ICON_PATHS.plusCircle} className="h-4 w-4" />
               Add stock
             </button>
             <button
               type="button"
               onClick={() => setMode("reduce")}
-              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium ${
-                mode === "reduce" ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-600"
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${
+                mode === "reduce" ? "bg-rose-600 text-white" : "bg-neutral-100 text-neutral-600 hover:bg-rose-50"
               }`}
             >
+              <Icon path={ICON_PATHS.minusCircle} className="h-4 w-4" />
               Reduce stock
             </button>
           </div>
@@ -75,13 +87,13 @@ export function StockAdjustModal({ product, onSubmit, onCancel }) {
               autoFocus
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
 
           <div className="flex items-center justify-between rounded-md bg-neutral-50 px-3 py-2 text-sm">
             <span className="text-neutral-500">Current: {product.stock}</span>
-            <span className="font-medium text-neutral-900">
+            <span className={`font-medium ${hasValidQuantity ? (isAdd ? "text-emerald-600" : "text-rose-600") : "text-neutral-900"}`}>
               New: {hasValidQuantity ? resultingStock : "—"}
             </span>
           </div>
@@ -99,8 +111,11 @@ export function StockAdjustModal({ product, onSubmit, onCancel }) {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:bg-neutral-400"
+              className={`flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-neutral-400 ${
+                isAdd ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+              }`}
             >
+              {!saving && <Icon path={ICON_PATHS.check} className="h-4 w-4" />}
               {saving ? "Saving..." : "Save"}
             </button>
           </div>

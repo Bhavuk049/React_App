@@ -13,6 +13,8 @@ const EMPTY_SETTINGS = {
   state: null,
   postalCode: null,
   country: "India",
+  promoBarEnabled: true,
+  promoBarMessages: [],
 };
 
 // GSTIN: 2-digit state code + 10-char PAN + 1-digit entity code + "Z" + 1 checksum char.
@@ -27,6 +29,8 @@ const settingsSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   postalCode: z.string().regex(/^\d{6}$/, "PIN code must be 6 digits").optional().or(z.literal("")),
+  promoBarEnabled: z.boolean().optional(),
+  promoBarMessages: z.array(z.string().trim().min(1).max(200)).max(10).optional(),
 });
 
 const NULLABLE_FIELDS = [

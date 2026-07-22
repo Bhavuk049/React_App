@@ -24,6 +24,8 @@ model StoreSettings {
   state        String?
   postalCode   String?
   country      String   @default("India")
+  promoBarEnabled  Boolean  @default(true)
+  promoBarMessages String[] @default([])
   updatedAt    DateTime @updatedAt
 
   @@map("store_settings")

@@ -8,12 +8,17 @@ export function ProductCard({ product }) {
 
   return (
     <Link to={`/products/${product.slug}`} className="group block">
-      <div className="relative aspect-square overflow-hidden rounded-lg bg-neutral-100">
+      <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100">
         <img
           src={resolveImageUrl(product.images?.[0])}
           alt={product.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
+        {hasDiscount && (
+          <span className="absolute bottom-2 left-2 rounded-full bg-rose-500 px-2.5 py-1 text-xs font-semibold text-white">
+            Sale
+          </span>
+        )}
         {product.stock === 0 ? (
           <span className="absolute left-2 top-2 rounded-full bg-neutral-900/80 px-2.5 py-1 text-xs font-medium text-white">
             Out of stock

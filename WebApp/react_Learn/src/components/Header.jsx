@@ -4,7 +4,7 @@ import { useCart } from "../hooks/useCart.js";
 
 const navLinkClass = ({ isActive }) =>
   `text-sm font-medium transition-colors ${
-    isActive ? "text-neutral-900" : "text-neutral-500 hover:text-neutral-900"
+    isActive ? "text-rose-600" : "text-neutral-500 hover:text-rose-600"
   }`;
 
 export function Header() {
@@ -12,11 +12,11 @@ export function Header() {
   const { totalItems } = useCart();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-rose-100 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2">
           <img src="/logo.webp" alt="" className="h-16 w-auto" />
-          <span className="text-xl font-semibold tracking-tight text-neutral-900">TheUniqPick</span>
+          <span className="font-display text-xl font-semibold tracking-tight text-neutral-900">TheUniqPick</span>
         </Link>
 
         <nav className="hidden items-center gap-8 sm:flex">
@@ -29,13 +29,10 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-5">
-          <Link
-            to="/cart"
-            className="relative text-sm font-medium text-neutral-600 hover:text-neutral-900"
-          >
+          <Link to="/cart" className="relative text-sm font-medium text-neutral-600 hover:text-rose-600">
             Cart
             {totalItems > 0 && (
-              <span className="absolute -right-3 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-semibold text-white">
+              <span className="absolute -right-3 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white">
                 {totalItems}
               </span>
             )}
@@ -44,12 +41,12 @@ export function Header() {
           {user ? (
             <div className="flex items-center gap-4">
               {user.role === "ADMIN" && (
-                <Link to="/admin" className="text-sm font-medium text-neutral-600 hover:text-neutral-900">
+                <Link to="/admin" className="text-sm font-medium text-neutral-600 hover:text-rose-600">
                   Admin
                 </Link>
               )}
               {user.role === "CUSTOMER" && (
-                <Link to="/orders" className="text-sm font-medium text-neutral-600 hover:text-neutral-900">
+                <Link to="/orders" className="text-sm font-medium text-neutral-600 hover:text-rose-600">
                   Orders
                 </Link>
               )}
@@ -58,7 +55,7 @@ export function Header() {
                   to="/account"
                   title="My account"
                   aria-label="My account"
-                  className="inline-flex rounded-full p-1 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+                  className="inline-flex rounded-full p-1 text-neutral-600 hover:bg-rose-50 hover:text-rose-600"
                 >
                   <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
                     <path
@@ -69,15 +66,12 @@ export function Header() {
                   </svg>
                 </Link>
               )}
-              <button
-                onClick={logout}
-                className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
-              >
+              <button onClick={logout} className="text-sm font-medium text-neutral-600 hover:text-rose-600">
                 Logout
               </button>
             </div>
           ) : (
-            <Link to="/login" className="text-sm font-medium text-neutral-600 hover:text-neutral-900">
+            <Link to="/login" className="text-sm font-medium text-neutral-600 hover:text-rose-600">
               Login
             </Link>
           )}

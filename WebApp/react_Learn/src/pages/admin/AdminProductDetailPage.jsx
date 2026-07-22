@@ -1,8 +1,24 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAdminGetProductQuery } from "../../store/api/productsApi.js";
 import { resolveImageUrl } from "../../utils/images.js";
+import { Icon, SectionHeading } from "../../components/Icon.jsx";
+import { ICON_PATHS } from "../../utils/iconPaths.js";
 
 const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+
+function StatTile({ icon, iconClassName, label, value, valueClassName = "text-neutral-900" }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4">
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconClassName}`}>
+        <Icon path={icon} className="h-5 w-5" />
+      </span>
+      <div>
+        <p className="text-xs text-neutral-500">{label}</p>
+        <p className={`text-base font-semibold ${valueClassName}`}>{value}</p>
+      </div>
+    </div>
+  );
+}
 
 export function AdminProductDetailPage() {
   const { id } = useParams();
@@ -15,15 +31,37 @@ export function AdminProductDetailPage() {
 
   const { product, productLogs } = data;
   const netChange = productLogs.reduce((sum, entry) => sum + entry.delta, 0);
+  const isOnSale = product.compareAtPrice && Number(product.compareAtPrice) > Number(product.price);
 
   return (
     <div>
-      <button onClick={() => navigate(-1)} className="text-sm font-medium text-neutral-600 hover:text-neutral-900">
-        ← Back
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-1.5 text-sm font-medium text-neutral-600 hover:text-indigo-700"
+      >
+        <Icon path={ICON_PATHS.arrowLeft} className="h-4 w-4" />
+        Back
       </button>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold text-neutral-900">{product.name}</h1>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white">
+            <Icon path={ICON_PATHS.products} className="h-5 w-5" />
+          </span>
+          <h1 className="text-xl font-semibold text-neutral-900">{product.name}</h1>
+          {product.isFeatured && (
+            <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-600">
+              <Icon path={ICON_PATHS.star} className="h-3.5 w-3.5" />
+              Featured
+            </span>
+          )}
+          {isOnSale && (
+            <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-600">
+              <Icon path={ICON_PATHS.tag} className="h-3.5 w-3.5" />
+              On sale
+            </span>
+          )}
+        </div>
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
             product.isActive ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-500"
@@ -33,9 +71,42 @@ export function AdminProductDetailPage() {
         </span>
       </div>
 
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatTile
+          icon={ICON_PATHS.cash}
+          iconClassName="bg-emerald-50 text-emerald-600"
+          label="Sale price"
+          value={
+            isOnSale ? (
+              <span className="flex items-center gap-2">
+                {currency.format(product.price)}
+                <span className="text-sm font-normal text-neutral-400 line-through">
+                  {currency.format(product.compareAtPrice)}
+                </span>
+              </span>
+            ) : (
+              currency.format(product.price)
+            )
+          }
+        />
+        <StatTile
+          icon={ICON_PATHS.bag}
+          iconClassName={product.stock === 0 ? "bg-red-50 text-red-600" : "bg-sky-50 text-sky-600"}
+          label="Current stock"
+          value={product.stock}
+          valueClassName={product.stock === 0 ? "text-red-600" : "text-neutral-900"}
+        />
+        <StatTile
+          icon={ICON_PATHS.receipt}
+          iconClassName="bg-indigo-50 text-indigo-600"
+          label="GST"
+          value={`${Number(product.gstRate)}%`}
+        />
+      </div>
+
       <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
         <section className="rounded-lg border border-neutral-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-neutral-900">Details</h2>
+          <SectionHeading icon={ICON_PATHS.info}>Details</SectionHeading>
           <dl className="mt-3 space-y-1 text-sm">
             <div className="flex gap-2">
               <dt className="font-medium text-neutral-700">Slug:</dt>
@@ -46,19 +117,21 @@ export function AdminProductDetailPage() {
               <dd className="text-neutral-600">{product.category?.name}</dd>
             </div>
             <div className="flex gap-2">
-              <dt className="font-medium text-neutral-700">Sale price:</dt>
-              <dd className="text-neutral-600">{currency.format(product.price)}</dd>
-            </div>
-            <div className="flex gap-2">
               <dt className="font-medium text-neutral-700">Purchase price:</dt>
               <dd className="text-neutral-600">
                 {product.purchasePrice ? currency.format(product.purchasePrice) : "—"}
               </dd>
             </div>
             <div className="flex gap-2">
-              <dt className="font-medium text-neutral-700">Current stock:</dt>
-              <dd className={product.stock === 0 ? "font-medium text-red-600" : "text-neutral-600"}>
-                {product.stock}
+              <dt className="font-medium text-neutral-700">Compare-at price:</dt>
+              <dd className="text-neutral-600">
+                {product.compareAtPrice ? currency.format(product.compareAtPrice) : "—"}
+              </dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-medium text-neutral-700">On sale:</dt>
+              <dd className={isOnSale ? "font-medium text-rose-600" : "text-neutral-600"}>
+                {isOnSale ? "Yes" : "No"}
               </dd>
             </div>
             <div className="flex gap-2">
@@ -79,7 +152,9 @@ export function AdminProductDetailPage() {
         </section>
 
         <section className="rounded-lg border border-neutral-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-neutral-900">Images</h2>
+          <SectionHeading icon={ICON_PATHS.photo} iconClassName="bg-sky-50 text-sky-600">
+            Images
+          </SectionHeading>
           {product.images.length === 0 ? (
             <p className="mt-3 text-sm text-neutral-500">No images.</p>
           ) : (
@@ -99,8 +174,10 @@ export function AdminProductDetailPage() {
 
       <section className="mt-6 rounded-lg border border-neutral-200 bg-white">
         <div className="border-b border-neutral-200 p-6 pb-4">
-          <h2 className="text-base font-semibold text-neutral-900">Product logs</h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <SectionHeading icon={ICON_PATHS.clock} iconClassName="bg-violet-50 text-violet-600">
+            Product logs
+          </SectionHeading>
+          <p className="mt-2 text-sm text-neutral-500">
             Net change of {netChange >= 0 ? "+" : ""}
             {netChange} unit{Math.abs(netChange) === 1 ? "" : "s"} across {productLogs.length} entr
             {productLogs.length === 1 ? "y" : "ies"}.
@@ -131,7 +208,7 @@ export function AdminProductDetailPage() {
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-3 py-1 text-xs font-medium ${
-                        entry.type === "order" ? "bg-sky-100 text-sky-700" : "bg-neutral-100 text-neutral-600"
+                        entry.type === "order" ? "bg-sky-100 text-sky-700" : "bg-violet-100 text-violet-700"
                       }`}
                     >
                       {entry.type === "order" ? "Order" : "Manual"}
@@ -140,7 +217,10 @@ export function AdminProductDetailPage() {
                   <td className="px-4 py-3 text-neutral-500">
                     {entry.type === "order" ? (
                       <>
-                        <Link to={`/admin/orders/${entry.order.id}`} className="font-medium text-neutral-900 hover:underline">
+                        <Link
+                          to={`/admin/orders/${entry.order.id}`}
+                          className="font-medium text-neutral-900 hover:text-indigo-700 hover:underline"
+                        >
                           #{entry.order.id.slice(0, 8).toUpperCase()}
                         </Link>{" "}
                         —{" "}
