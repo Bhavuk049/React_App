@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useGetSettingsQuery } from "../store/api/settingsApi.js";
 import { useListLegalPagesQuery } from "../store/api/legalPagesApi.js";
 import { Icon } from "./Icon.jsx";
+import { WaveDivider } from "./WaveDivider.jsx";
 import { ICON_PATHS } from "../utils/iconPaths.js";
 
 export function Footer() {
@@ -12,7 +13,8 @@ export function Footer() {
   const cityLine = [settings?.city, settings?.state, settings?.postalCode].filter(Boolean).join(", ");
 
   return (
-    <footer className="border-t border-rose-100 bg-rose-50">
+    <footer className="relative overflow-hidden bg-gradient-to-b from-rose-100 to-rose-200 pt-8 sm:pt-12">
+      <WaveDivider color="#f9f4ea" />
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-12 sm:grid-cols-3 sm:px-6 lg:px-8">
         <div className="flex flex-col items-start gap-2">
           <img src="/logo.webp" alt="TheUniqPick" className="h-20 w-auto" />
@@ -68,7 +70,7 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-rose-100 py-4 text-center text-xs text-neutral-500">
+      <div className="border-t border-rose-300/50 py-4 text-center text-xs text-neutral-600">
         &copy; {new Date().getFullYear()} TheUniqPick. All rights reserved.
       </div>
     </footer>

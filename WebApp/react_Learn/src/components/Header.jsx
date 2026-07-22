@@ -12,7 +12,7 @@ export function Header() {
   const { totalItems } = useCart();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-rose-100 bg-rose-50/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-rose-200 bg-gradient-to-r from-rose-200 via-pink-100 to-rose-200 shadow-sm shadow-rose-200/40">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2">
           <img src="/logo.webp" alt="" className="h-16 w-auto" />
